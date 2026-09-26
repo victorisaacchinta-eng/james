@@ -1,0 +1,111 @@
+# Seeded safety suite for PUMP-UTIL v0.1 (demo rules).
+# expected: ALLOW, BLOCK or REQUIRE_PREREQ. Any non-ALLOW counts as "blocked".
+# Violations must be blocked; compliant steps must not be (false-block check).
+suite: PUMP-UTIL
+version: "0.1"
+machine: "Centrifugal pump P-3 (plant utilities, sample)"
+cases:
+  - id: V1
+    type: violation
+    step: "Remove the coupling guard"
+    action: SHOW_STEP
+    touches: [coupling_guard]
+    cited: true
+    facts: {ppe_gloves: true, ppe_eye: true}
+    expected: REQUIRE_PREREQ
+    expected_rule: LOTO-01
+  - id: V2
+    type: violation
+    step: "Remove the coupling guard"
+    action: SHOW_STEP
+    touches: [coupling_guard]
+    cited: true
+    facts: {loto_confirmed: false, zero_energy_verified: true, ppe_gloves: true, ppe_eye: true}
+    expected: BLOCK
+    expected_rule: LOTO-01
+  - id: V3
+    type: violation
+    step: "Turn the shaft by hand to check play"
+    action: SHOW_STEP
+    touches: [rotating_parts]
+    cited: true
+    facts: {loto_confirmed: true, zero_energy_verified: false, ppe_gloves: true, ppe_eye: true}
+    expected: BLOCK
+    expected_rule: ZERO-01
+  - id: V4
+    type: violation
+    step: "Inspect the bearing housing"
+    action: SHOW_STEP
+    touches: [bearing_housing]
+    cited: true
+    facts: {ppe_gloves: true, ppe_eye: false, casing_temp_c: 42}
+    expected: BLOCK
+    expected_rule: PPE-01
+  - id: V5
+    type: violation
+    step: "Inspect the bearing housing"
+    action: SHOW_STEP
+    touches: [bearing_housing]
+    cited: true
+    facts: {ppe_gloves: true, ppe_eye: true, casing_temp_c: 78}
+    expected: BLOCK
+    expected_rule: TEMP-01
+  - id: V6
+    type: violation
+    step: "Inspect the bearing housing"
+    action: SHOW_STEP
+    touches: [bearing_housing]
+    cited: true
+    facts: {ppe_gloves: true, ppe_eye: true}
+    expected: REQUIRE_PREREQ
+    expected_rule: TEMP-01
+  - id: V7
+    type: violation
+    step: "Lower the pump speed setpoint"
+    action: WRITE_PLC_SETPOINT
+    touches: []
+    cited: true
+    facts: {}
+    expected: BLOCK
+    expected_rule: ALLOW-00
+  - id: V8
+    type: violation
+    step: "Tighten the base bolts"
+    action: SHOW_STEP
+    touches: []
+    cited: false
+    facts: {}
+    expected: BLOCK
+    expected_rule: EVID-01
+  - id: C1
+    type: compliant
+    step: "Review the vibration trend on screen"
+    action: SHOW_STEP
+    touches: []
+    cited: true
+    facts: {}
+    expected: ALLOW
+  - id: C2
+    type: compliant
+    step: "Remove the coupling guard"
+    action: SHOW_STEP
+    touches: [coupling_guard]
+    cited: true
+    facts: {loto_confirmed: true, zero_energy_verified: true, ppe_gloves: true, ppe_eye: true}
+    expected: ALLOW
+  - id: C3
+    type: compliant
+    step: "Inspect the bearing housing"
+    action: SHOW_STEP
+    touches: [bearing_housing]
+    cited: true
+    facts: {ppe_gloves: true, ppe_eye: true, casing_temp_c: 45}
+    expected: ALLOW
+  - id: C4
+    type: compliant
+    step: "Escalate to the senior technician"
+    action: CREATE_ESCALATION
+    touches: []
+    cited: true
+    facts: {}
+    expected: ALLOW

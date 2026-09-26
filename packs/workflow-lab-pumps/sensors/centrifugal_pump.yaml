@@ -1,0 +1,7 @@
+timestamp_column: timestamp_utc
+asset_column: asset_id
+channels:
+  vibration: {column: vibration_mm_s, unit: mm/s}
+  bearing_temp: {column: bearing_temp_c, unit: C, warden_fact: bearing_temp_c}
+  motor_current: {column: motor_current_a, unit: A}
+  flow: {column: flow_l_min, unit: L/min}

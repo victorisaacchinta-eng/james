@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JAMES Workflow Lab</title>
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="mark">JAMES</span><span class="sub">Workflow Lab</span></div>
+  <div class="badges" id="badges"></div>
+  <div class="roles" role="group" aria-label="Demo role">
+    <span class="roles-note">Demo roles, not authenticated</span>
+    <button data-role="technician" class="seg on">Technician</button>
+    <button data-role="reviewer" class="seg">Reviewer</button>
+  </div>
+</header>
+<div class="shell">
+  <nav class="nav" id="nav" aria-label="Screens">
+    <button data-view="workspace" class="on"><span class="n">1</span>Workspace</button>
+    <button data-view="evidence"><span class="n">2</span>Evidence</button>
+    <button data-view="work"><span class="n">3</span>Guided work</button>
+    <button data-view="ledger"><span class="n">4</span>Work ledger</button>
+    <button data-view="review"><span class="n">5</span>Review queue</button>
+    <button data-view="dev" class="dev"><span class="n">6</span>Developer</button>
+    <div class="jobchip" id="jobchip"></div>
+  </nav>
+  <main id="main" tabindex="-1"></main>
+</div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <div class="drawer-head"><strong id="drawer-title">Source</strong><button class="ghost" id="drawer-close" aria-label="Close source">Close</button></div>
+  <div class="drawer-body" id="drawer-body"></div>
+</aside>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script type="module" src="/static/app.js"></script>
+</body>
+</html>

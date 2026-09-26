@@ -1,0 +1,35 @@
+# JAMES industry pack. Spec: PACK_FORMAT.md (james-pack/0.1).
+# DEMO PACK: sample data and demo rules. Not from an OEM, not approved by any plant.
+format: james-pack/0.1
+id: pharma-utility
+version: 0.1.1          # 0.1.1: FOREMAN observation questions (faults file)
+name: Pharma utilities (demo)
+publisher: JAMES demo team (not an OEM)
+status: demo
+licence: Apache-2.0
+
+equipment_classes:
+  centrifugal_pump:
+    label: Centrifugal pump
+    rules: rules/pump_util_v0_1.yaml
+    rule_tests: rules/pump_util_v0_1.cases.yaml
+    faults: faults/centrifugal_pump.yaml
+    sensors: sensors/centrifugal_pump.yaml
+    manual: docs/sample_pump_manual.pdf
+
+# Demo site binding (plant data; moves to a site file in Step 10).
+assets:
+  - asset_id: P-3
+    class: centrifugal_pump
+    label: Centrifugal pump P-3 (plant utilities, sample)
+    aruco_id: 4          # was 3 until 2026-09-26; the owner's printed id 3 card is now the owner key
+    sample_log: data/p3_vibration.csv
+
+# Written by: python -m james_core.pack rehash packs/pharma-utility
+files:
+  "data/p3_vibration.csv": "0ecce6eaca202f9b053aa9f636f23171c1b8f83c65a4bb05740dcfb47bdf0b12"
+  "docs/sample_pump_manual.pdf": "fef886bbccb10aef6bfcba5db441725e05dd1af0f19d6b8148bbc660a1c1d2b3"
+  "faults/centrifugal_pump.yaml": "30448113be0e63520cd3f64bd44457dfea100156fdd021611398ffe4d2ca957c"
+  "rules/pump_util_v0_1.cases.yaml": "87a45503e0b9d1b625f9e3af0df5c1987c52fdff3b5e49c3328c97eab5eea7b7"
+  "rules/pump_util_v0_1.yaml": "71b503da6da251eeba3ed1202aeafd3527c8409b0bdf1b8be660b98d9868d55a"
+  "sensors/centrifugal_pump.yaml": "ddf0591653d0d71ccf74e1906d19a6f9ae2b567dd9ace6f9da7ce403ed35a477"

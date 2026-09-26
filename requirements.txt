@@ -1,0 +1,13 @@
+mediapipe==0.10.32
+opencv-contrib-python
+numpy
+pandas
+pymupdf
+faster-whisper
+sounddevice
+langgraph
+qdrant-client
+pydantic>=2
+pyyaml
+pytest
+kokoro-onnx==0.6.1

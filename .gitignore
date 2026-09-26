@@ -1,0 +1,29 @@
+# Python and tooling
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+
+# Local only: backups, junk, screenshots
+_backups/
+_to_delete/
+*outputs/
+_private/
+
+# Neural voice model files (348 MB, over GitHub's 100 MB limit). Get them with: python -m tools.get_voice
+assets/voice/*.onnx
+assets/voice/*.bin
+
+# Runtime data: personal logs, ledgers, preferences, contacts
+data/*.db
+data/james_demo_log.txt
+data/prefs.json
+data/contacts.json
+data/owner_ring.json
+data/runs.csv
+data/sim_frames/
+lab/data/
+
+# Private working notes (keep out of the public repo)
+*.private.md

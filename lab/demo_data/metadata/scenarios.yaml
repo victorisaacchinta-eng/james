@@ -1,0 +1,14 @@
+# Scenario settings. All values are DEMO values for software testing, not engineering limits.
+window_min: 120          # analysis window, ending at the scenario clock
+baseline_min: 60         # first part of the window used as the baseline
+current_min: 15          # last part of the window used as "current"
+freshness_limit_min: 30  # newest sample older than this, relative to the scenario clock = stale
+# |percent change| at or above this is flagged up/down; at or above half of it is "borderline".
+thresholds_pct: {vibration_mm_s: 50, bearing_temp_c: 15, motor_current_a: 8, flow_l_min: 15}
+scenarios:
+  abnormal:  {label: "Abnormal: rising vibration, falling flow", dataset: abnormal.csv, default_asset: DEMO-PUMP-03}
+  healthy:   {label: "Healthy: no meaningful deviation", dataset: healthy.csv, default_asset: DEMO-PUMP-03}
+  missing:   {label: "Missing data: bearing temperature offline", dataset: missing.csv, default_asset: DEMO-PUMP-03}
+  stale:     {label: "Stale data: newest sample 3 h old", dataset: abnormal.csv, default_asset: DEMO-PUMP-03, clock: "2026-09-20T11:00:00Z"}
+  invalid:   {label: "Invalid data: malformed rows", dataset: invalid.csv, default_asset: DEMO-PUMP-03}
+  ambiguous: {label: "Ambiguous: borderline vibration only", dataset: ambiguous.csv, default_asset: DEMO-PUMP-03}

@@ -1,0 +1,23 @@
+# Candidate causes for the Lab's synthetic pump procedure. Not from an OEM.
+causes:
+  flow_restriction: {label: suction flow restriction, manual_section: PROC-VIB-0}
+  bearing_wear: {label: bearing wear, manual_section: PROC-VIB-0}
+  misalignment: {label: coupling misalignment, manual_section: PROC-VIB-0}
+symptom_words:
+  vibrating: vibration
+  vibrate: vibration
+  shaking: vibration
+  shake: vibration
+  rattling: vibration
+  hot: temperature
+  heat: temperature
+  overheating: temperature
+  warm: temperature
+  noisy: noise
+  grinding: noise
+  rumbling: noise
+  amps: current
+  flow: flow
+  pressure: flow
+# The Lab computes patterns in guidance/pump_patterns.yaml; no PULSE signatures here.
+sensor_signatures: []

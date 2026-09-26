@@ -1,0 +1,20 @@
+# Fixture-mode guidance table. SYNTHETIC: authored for software testing, not engineering advice.
+# A pattern lists the channel directions that must all be flagged. Every matching pattern's
+# candidates are offered as POSSIBLE causes; none is ever presented as confirmed.
+patterns:
+  - id: PAT-VIB-FLOW
+    when: {vibration_mm_s: up, flow_l_min: down}
+    candidates: [flow_restriction]
+    steps: [PV-01, PV-02, PV-03, PV-04, PV-06, PV-09]
+  - id: PAT-VIB-TEMP
+    when: {vibration_mm_s: up, bearing_temp_c: up}
+    candidates: [bearing_wear]
+    steps: [PV-01, PV-02, PV-05, PV-08, PV-09]
+  - id: PAT-VIB-ONLY
+    when: {vibration_mm_s: up, bearing_temp_c: within_band, flow_l_min: within_band}
+    candidates: [misalignment]
+    steps: [PV-01, PV-02, PV-03, PV-05, PV-07, PV-09]
+# Used when vibration is flagged but no specific pattern applies, or evidence is incomplete.
+default_steps: [PV-03, PV-05, PV-09, PV-10]
+# Always appended to a pump job: escalation and closure are part of every job.
+closing_steps: [PV-10, PV-11]

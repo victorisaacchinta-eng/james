@@ -1,0 +1,37 @@
+# Fault vocabulary for centrifugal pumps.
+# DEMO VALUES written by the JAMES team for the sample manual. Not from an OEM.
+causes:                      # order matters: it is the order offered to the local model
+  bearing_wear: {label: bearing wear, manual_section: "6.3"}
+  misalignment: {label: misalignment, manual_section: "6.4"}
+  cavitation:   {label: cavitation, manual_section: "6.5"}
+
+# What technicians say -> the word the manual uses.
+symptom_words:
+  shaking: vibration
+  shake: vibration
+  shakes: vibration
+  vibrating: vibration
+  rattling: vibration
+  hot: temperature
+  heat: temperature
+  overheating: temperature
+  grinding: noise
+  noisy: noise
+  squeal: noise
+  leaking: leak
+
+# Questions FOREMAN may ask the technician when the evidence cannot separate two causes (no sensor log, or
+# sources disagree). Each distinction is taken from the sample manual's troubleshooting table (p. 4).
+observations:
+  - {id: bearing_hot, question: "Is the bearing housing hotter than usual?", if_yes: bearing_wear, if_no: misalignment,
+     source: "sample manual p. 4: high vibration with rising bearing temperature -> bearing wear; normal temperature -> misalignment"}
+  - {id: coupling_work, question: "Was the coupling worked on recently?", if_yes: misalignment,
+     source: "sample manual p. 4: misalignment often after coupling work"}
+  - {id: gravel_noise, question: "Does it sound like gravel inside the pump, with discharge pressure jumping?", if_yes: cavitation,
+     source: "sample manual p. 4: noise like gravel, discharge pressure fluctuating -> cavitation"}
+
+# PULSE checks these in order against the sensor log; the first match is its stance.
+# ratio = recent vibration mean / baseline median. DEMO THRESHOLDS, not OEM limits.
+sensor_signatures:
+  - {cause: bearing_wear, vibration_ratio_min: 2.0, temp_rise_min_c: 3}
+  - {cause: misalignment, vibration_ratio_min: 2.0}

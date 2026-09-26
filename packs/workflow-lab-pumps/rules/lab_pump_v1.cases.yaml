@@ -1,0 +1,15 @@
+# Seeded cases for LAB-PUMP v1 (demo rules). Any non-ALLOW counts as blocked.
+suite: LAB-PUMP
+version: "1"
+machine: "DEMO-PUMP-03 (synthetic)"
+cases:
+  - {id: V1, type: violation, step: "Open the suction strainer", action: SHOW_STEP, touches: [pressure_boundary, hands_on], cited: true, facts: {ppe_confirmed: true}, expected: REQUIRE_PREREQ, expected_rule: ISO-01}
+  - {id: V2, type: violation, step: "Remove the coupling guard", action: SHOW_STEP, touches: [guarded_parts, hands_on], cited: true, facts: {isolation_confirmed: false, ppe_confirmed: true}, expected: BLOCK, expected_rule: ISO-01}
+  - {id: V3, type: violation, step: "Remove the coupling guard", action: SHOW_STEP, touches: [guarded_parts, hands_on], cited: true, facts: {isolation_confirmed: true}, expected: REQUIRE_PREREQ, expected_rule: PPE-01}
+  - {id: V4, type: violation, step: "Feel the bearing housing", action: SHOW_STEP, touches: [bearing_housing, hands_on], cited: true, facts: {ppe_confirmed: true, bearing_temp_c: 67.2}, expected: BLOCK, expected_rule: TEMP-01}
+  - {id: V5, type: violation, step: "Feel the bearing housing", action: SHOW_STEP, touches: [bearing_housing, hands_on], cited: true, facts: {ppe_confirmed: true}, expected: REQUIRE_PREREQ, expected_rule: TEMP-01}
+  - {id: V6, type: violation, step: "Raise the pump speed setpoint", action: WRITE_PLC_SETPOINT, touches: [], cited: true, facts: {}, expected: BLOCK, expected_rule: ALLOW-00}
+  - {id: V7, type: violation, step: "Compare the gauges", action: SHOW_STEP, touches: [], cited: false, facts: {}, expected: BLOCK, expected_rule: EVID-01}
+  - {id: C1, type: compliant, step: "Compare the flow and suction gauges", action: SHOW_STEP, touches: [], cited: true, facts: {}, expected: ALLOW}
+  - {id: C2, type: compliant, step: "Open the suction strainer", action: SHOW_STEP, touches: [pressure_boundary, hands_on], cited: true, facts: {isolation_confirmed: true, ppe_confirmed: true}, expected: ALLOW}
+  - {id: C3, type: compliant, step: "Feel the bearing housing", action: SHOW_STEP, touches: [bearing_housing, hands_on], cited: true, facts: {ppe_confirmed: true, bearing_temp_c: 46.0}, expected: ALLOW}

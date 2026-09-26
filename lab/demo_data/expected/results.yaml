@@ -1,0 +1,21 @@
+# FIXTURE GROUND TRUTH AND EXPECTED RESULTS. Tests read this file; the runtime never does
+# (tests/test_lab.py checks that no lab module references this folder).
+abnormal:
+  authored_ground_truth: flow_restriction   # the story the fixture was written around; never shown as observed
+  DEMO-PUMP-03: {vibration_mm_s: up, bearing_temp_c: up, motor_current_a: up, flow_l_min: down}
+  DEMO-PUMP-04: {vibration_mm_s: within_band, bearing_temp_c: within_band, motor_current_a: within_band, flow_l_min: within_band}
+  DEMO-FAN-01: {flow_l_min: not_applicable}
+  candidates: [flow_restriction, bearing_wear]
+healthy:
+  DEMO-PUMP-03: {vibration_mm_s: within_band, bearing_temp_c: within_band, motor_current_a: within_band, flow_l_min: within_band}
+  candidates: []
+missing:
+  DEMO-PUMP-03: {vibration_mm_s: up, bearing_temp_c: unavailable, motor_current_a: up, flow_l_min: down}
+  candidates: [flow_restriction]
+stale:
+  freshness: stale
+ambiguous:
+  DEMO-PUMP-03: {vibration_mm_s: borderline, bearing_temp_c: within_band, motor_current_a: within_band, flow_l_min: within_band}
+  candidates: []
+invalid:
+  valid: false

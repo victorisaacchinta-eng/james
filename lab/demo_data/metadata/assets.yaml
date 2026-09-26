@@ -1,0 +1,18 @@
+# Site metadata for the Workflow Lab (synthetic). Which channels each asset has, and their units.
+# not_applicable means the asset has no such channel: the Lab shows it as N/A and never fills it in.
+assets:
+  DEMO-PUMP-03:
+    label: DEMO-PUMP-03 utility pump
+    category: centrifugal_pump
+    pack: workflow-lab-pumps
+    channels: {vibration_mm_s: mm/s, bearing_temp_c: C, motor_current_a: A, flow_l_min: L/min}
+  DEMO-PUMP-04:
+    label: DEMO-PUMP-04 utility pump
+    category: centrifugal_pump
+    pack: workflow-lab-pumps
+    channels: {vibration_mm_s: mm/s, bearing_temp_c: C, motor_current_a: A, flow_l_min: L/min}
+  DEMO-FAN-01:
+    label: DEMO-FAN-01 extract fan
+    category: axial_fan
+    pack: null            # no industry pack covers this fan
+    channels: {vibration_mm_s: mm/s, bearing_temp_c: C, motor_current_a: A, flow_l_min: not_applicable}

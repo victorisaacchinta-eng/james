@@ -1,0 +1,8 @@
+# Seeded past jobs (sample data). Only approved jobs are ever reused.
+jobs:
+  - {job_id: "018", asset_id: P-3, symptoms: [vibration, overheating], cause: bearing_wear,
+     fix: "Replaced drive-end bearing 6205-2RS", approved_by: senior-01}
+  - {job_id: "019", asset_id: P-7, symptoms: [leak], cause: seal_wear,
+     fix: "Replaced mechanical seal", approved_by: senior-01}
+  - {job_id: "020", asset_id: P-3, symptoms: [vibration], cause: misalignment,
+     fix: "Realigned coupling (unreviewed note)", approved_by: null}

@@ -1,0 +1,16 @@
+# Step catalog for DEMO-PROC-PUMP-VIBRATION-v1. Step text lives in the document;
+# this file adds what software needs: kind, hazard tags for WARDEN, and the fact a step records.
+procedure: DEMO-PROC-PUMP-VIBRATION
+version: v1
+steps:
+  PV-01: {section: PROC-VIB-1, kind: prerequisite, records: isolation_confirmed, touches: []}
+  PV-02: {section: PROC-VIB-1, kind: prerequisite, records: ppe_confirmed, touches: []}
+  PV-03: {section: PROC-VIB-2, kind: check, touches: []}
+  PV-04: {section: PROC-VIB-2, kind: check, touches: []}
+  PV-05: {section: PROC-VIB-2, kind: check, touches: []}
+  PV-06: {section: PROC-VIB-3, kind: check, touches: [pressure_boundary, hands_on]}
+  PV-07: {section: PROC-VIB-3, kind: check, touches: [guarded_parts, hands_on]}
+  PV-08: {section: PROC-VIB-3, kind: check, touches: [bearing_housing, hands_on]}
+  PV-09: {section: PROC-VIB-4, kind: capture, touches: []}
+  PV-10: {section: PROC-VIB-5, kind: escalate, touches: []}
+  PV-11: {section: PROC-VIB-6, kind: closure, touches: []}

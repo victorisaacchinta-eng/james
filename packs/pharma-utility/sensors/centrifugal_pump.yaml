@@ -1,0 +1,12 @@
+# Sensor channels for centrifugal pumps. Step 1: read from a sample CSV log.
+# Step 4 maps the same channels to a live Modbus/MQTT adapter.
+timestamp_column: timestamp
+asset_column: asset_id
+channels:
+  vibration:
+    column: vibration_rms_mm_s
+    unit: mm/s
+  casing_temp:
+    column: casing_temp_c
+    unit: C
+    warden_fact: casing_temp_c   # WARDEN's TEMP-01 rule reads this fact

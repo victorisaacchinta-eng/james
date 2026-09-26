@@ -1,0 +1,60 @@
+# DEMO RULES. Not approved by any plant EHS team or OEM.
+# Before any field use, replace with rules approved by the plant's safety and
+# maintenance heads, sourced from OEM and plant procedures.
+suite: PUMP-UTIL
+version: "0.1"
+status: demo
+applies_to: centrifugal pump, plant utilities
+
+allowlisted_actions:
+  - SHOW_STEP          # draw the step on the HUD
+  - OPEN_MANUAL_PAGE   # show the cited page
+  - LOG_STEP           # append to LEDGER
+  - CREATE_ESCALATION  # ticket to the senior technician
+# Nothing here writes to a machine controller. There is no action for that.
+
+# Deterministic tagging of manual steps (reviewable by EHS, no AI involved).
+hazard_keywords:
+  coupling_guard: ["coupling guard"]
+  rotating_parts: ["shaft", "rotate", "impeller"]
+  bearing_housing: ["bearing housing"]
+  electrical: ["terminal box", "motor leads", "cable"]
+  casing: ["casing"]
+# Confirming one of these steps records the matching fact.
+fact_steps:
+  loto_confirmed: ["lock and tag"]
+  zero_energy_verified: ["verify zero energy"]
+
+rules:
+  - id: ALLOW-00
+    kind: allowlist
+    reason: Action is not on the approved list
+
+  - id: EVID-01
+    kind: requires_evidence
+    reason: Step has no source (manual page, log window or job ID)
+
+  - id: LOTO-01
+    kind: requires_true
+    when_touches_any: [rotating_parts, electrical, coupling_guard]
+    facts: [loto_confirmed]
+    reason: Lockout/tagout not confirmed
+
+  - id: ZERO-01
+    kind: requires_true
+    when_touches_any: [rotating_parts, coupling_guard]
+    facts: [zero_energy_verified]
+    reason: Zero-energy check not confirmed after lockout
+
+  - id: PPE-01
+    kind: requires_true
+    when_touches_any: [bearing_housing, coupling_guard, rotating_parts]
+    facts: [ppe_gloves, ppe_eye]
+    reason: Required PPE not confirmed
+
+  - id: TEMP-01
+    kind: max_value
+    when_touches_any: [bearing_housing, casing]
+    fact: casing_temp_c
+    max: 60            # DEMO VALUE, not an OEM or plant limit
+    reason: Surface above the demo temperature limit; let it cool

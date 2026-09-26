@@ -1,0 +1,29 @@
+# DEMO RULES for the JAMES Workflow Lab. Not approved by any plant EHS team or OEM.
+suite: LAB-PUMP
+version: "1"
+status: demo
+applies_to: demo centrifugal pumps (synthetic)
+allowlisted_actions:
+  - SHOW_STEP
+# The Lab's step catalog carries explicit hazard tags, so keyword tagging is not used.
+hazard_keywords: {}
+fact_steps: {}
+rules:
+  - {id: ALLOW-00, kind: allowlist, reason: Action is not on the approved list}
+  - {id: EVID-01, kind: requires_evidence, reason: Step has no source}
+  - id: ISO-01
+    kind: requires_true
+    when_touches_any: [guarded_parts, pressure_boundary]
+    facts: [isolation_confirmed]
+    reason: Demo isolation confirmation not recorded for this job
+  - id: PPE-01
+    kind: requires_true
+    when_touches_any: [hands_on]
+    facts: [ppe_confirmed]
+    reason: Demo PPE confirmation not recorded for this job
+  - id: TEMP-01
+    kind: max_value
+    when_touches_any: [bearing_housing]
+    fact: bearing_temp_c
+    max: 55            # DEMO VALUE, not an engineering limit
+    reason: Bearing housing above the demo touch limit

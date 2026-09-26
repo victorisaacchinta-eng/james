@@ -1,0 +1,37 @@
+# JAMES industry pack for the Workflow Lab. Spec: PACK_FORMAT.md (james-pack/0.1).
+# DEMO PACK: synthetic procedure, demo rules. Not from an OEM, not approved by any plant.
+format: james-pack/0.1
+id: workflow-lab-pumps
+version: 0.1.0
+name: Workflow Lab demo pumps (synthetic)
+publisher: JAMES demo team (not an OEM)
+status: demo
+licence: Apache-2.0
+
+equipment_classes:
+  centrifugal_pump:
+    label: Centrifugal pump (synthetic)
+    rules: rules/lab_pump_v1.yaml
+    rule_tests: rules/lab_pump_v1.cases.yaml
+    faults: faults/centrifugal_pump.yaml
+    sensors: sensors/centrifugal_pump.yaml
+    manual: docs/DEMO-PROC-PUMP-VIBRATION-v1.md
+
+# Demo site binding. DEMO-FAN-01 is deliberately absent: no pack covers fans.
+assets:
+  - asset_id: DEMO-PUMP-03
+    class: centrifugal_pump
+    label: DEMO-PUMP-03 utility pump (synthetic)
+  - asset_id: DEMO-PUMP-04
+    class: centrifugal_pump
+    label: DEMO-PUMP-04 utility pump (synthetic)
+
+files:
+  "docs/DEMO-POLICY-PREREQUISITES-v1.md": "d6c4826819feace41b33ed4c79b9eb7c49aa1cda4d67e48fbf76e1f9f1912c70"
+  "docs/DEMO-PROC-PUMP-VIBRATION-v1.md": "346926a9c0605aef8465c328238c7e3896b49c9a4b528b520a6c002e6e5cb9e9"
+  "faults/centrifugal_pump.yaml": "a825e5c3d0383f0d43fb3b4af1787789a7e8ea9956f8e9120c0e820ea4e60c8d"
+  "guidance/pump_patterns.yaml": "da70640f6445f33fa94d54f76a536b73f4f0cf25dc4bb4aee75eb65717430b30"
+  "procedures/pump_vibration_steps.yaml": "310ddf7798dd3afeb0c0b10cc248e030ff0376b809275181f5202bda0ce952c1"
+  "rules/lab_pump_v1.cases.yaml": "3c61f7901b567590358b7b8ea6767495ed303566a046d68200f38bb28b651ada"
+  "rules/lab_pump_v1.yaml": "bd981ff7345aa4c0331f746bc6080abe9a0027d4fffd586734c86efadd8da032"
+  "sensors/centrifugal_pump.yaml": "296020e78a505c805d0a30d9e6840d5d2600fa90f7a11351a79408600a659f07"
