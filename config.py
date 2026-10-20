@@ -46,6 +46,14 @@ if OWNER_KEY_ID in ASSET_TAGS:
 POINT_STABLE_MS = 530            # the finger must stay on a tag this long before it counts (time, not frames:
                                  # 8 frames was 530 ms at 15 FPS but 800 ms at 10 FPS)
 PINCH_RATIO = 0.33               # thumb-index gap / palm size below this = pinch (tune with gloves)
+PINCH_FIST_LATCH = True          # a pinch that begins while the hand is a fist is ignored until the fingers open
+PINCH_REACH_TOL = 0.3            # a held pinch whose hand size changes more than this (30%) is a reach, not a pinch
+# SIGHT (james_core/sight.py): tracking-quality hints and the amber X when the hand is lost. SIGHT_LOW_LIGHT is
+# mean frame brightness 0..255.
+SIGHT = True
+SIGHT_LOW_LIGHT = 55
+# ARM TIME (james_core/armtime.py): suggest voice after this much weighted raised-arm time. 0 turns it off.
+ARM_NUDGE_S = 45
 # Motion (james_core/motion.py). 1-euro smoothing of the hand landmarks: lower SMOOTH_MIN_CUTOFF = steadier
 # when still; higher SMOOTH_BETA = less lag on fast moves. A pinch selects where the finger aimed this long
 # before the pinch began (closing the fingers drags the tip off target).

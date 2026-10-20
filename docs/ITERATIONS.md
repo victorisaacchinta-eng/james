@@ -231,6 +231,71 @@ player's own MP3s and built-in classics that are free to ship.
   files refused, a rescan retries failed files, swing speed scales with window width, hands timestamped at capture.
 - Tests: `tests/test_cantus.py` (50). Live on the Mac: not yet; the audio offset needs one tuning pass there.
 
+## Iteration 10: trusting the input (SIGHT, pinch guards, arm time), a chained ledger, the WARDEN signal band
+
+Asked for: research first (forums, news, papers, design references), then build what the research supports and
+the guardrails allow. What the research said, and what was built for it:
+
+- **Webcam hand tracking fails quietly.** Users report losing tracking against low-contrast clothing, a long lag
+  before an app admits the hand is gone (news.ycombinator.com/item?id=42733905), and no MediaPipe support for dark
+  gloves (groups.google.com/g/mediapipe/c/ahWdzSJpxHw, Jul 2026). Built **SIGHT** (`james_core/sight.py`): frame
+  brightness on a 32x18 thumbnail, the hand appearing and vanishing over and over (unsteady: gloves, contrast,
+  backlight), and the lost hand. The HUD freezes a still amber X with HAND LOST where the hand was last seen (the
+  way cockpit displays mark invalid data) and shows one SIGHT line in the bottom-left stack (toasts move above it).
+  Both apps. SIGHT never presses or unlocks anything. `james.py` logs `SIGHT <code> light=<n> flicker=<n>` when the
+  state changes.
+- **Everyday movement fires naive gestures.** A study of 52 person-hours of everyday activity found a false
+  positive about every 5.1 s for a plain gesture spotter (arxiv.org/pdf/1509.06109); a Mac hand-mouse project
+  filters accidental clicks by watching hand-size change (github.com/small-cactus/handTrack). Built two guards in
+  LENS: a **fist latch** (closing a fist puts the thumb on the index; a pinch that begins as a fist is ignored until
+  the fingers open) and **reach** (a held pinch whose hand size changes more than 30% is moving to or from the
+  camera, e.g. grabbing a tool). A reach never presses a launcher tile and never confirms a maintenance step: the
+  pinch is dropped and must be released. The latch uses the same index test as ATLAS (index at least half out), so
+  a pinch with the other fingers curled still counts. Hand size is the geometric mean of palm length and knuckle
+  width, so tilting the hand moves it about half as much as a reach. Config: `PINCH_FIST_LATCH`, `PINCH_REACH_TOL`.
+- **Arms tire.** "Within 5 minutes my arm was tired" (news.ycombinator.com/item?id=6210644); fatigue research
+  (NICER, arxiv.org/html/2406.08875v1) recommends breaks and moving from gesture to speech as effort builds. Built
+  **ARM TIME** (`james_core/armtime.py`): load while a hand drives input, weighted by wrist height in the frame
+  (1.5x high, 1.0x middle, 0.5x low), draining 2x during rest, capped at 1.5x the threshold. At 45 it suggests
+  voice once; a rest re-arms it. Both apps. Time in ATLAS and CANTUS and while voice is listening counts but never
+  nudges there; a nudge that came due shows once you are back. A heuristic, not a validated fatigue model; the
+  weights are starting values. On quit: `ARM up=..s longest=..s nudges=n` (james.py log, app.py console).
+- **Records need to be trustworthy.** Buyers in regulated plants ask for attributable, unaltered records (revised
+  Schedule M, ALCOA+). Built a **hash chain** on the ledger: every event gets SHA-256(previous hash + the event as
+  stored + how the link was made) in the same transaction. `python -m tools.verify_ledger` opens the database
+  read-only, walks the chain and names the first edited, unlinked, reordered or removed event. Each repair record
+  ends with the chain status and the head (event number and full hash); `--expect SEQ:HASH` checks a saved head
+  later, which is the only way to catch the newest events being cut off together with their links. Older
+  databases are sealed exactly once, the first time this version opens them; the point it sealed up to is
+  recorded and never moves, so an event written around the ledger later is reported, never sealed. The first
+  repair record of a run checks the whole chain, later ones only the new events, and the record says which.
+  Tamper-evident, not tamper-proof: a full rewrite with recomputed hashes needs a saved head to catch. An audit
+  aid, not a GMP or computer-system-validation claim.
+- **The blocked card was red everywhere**, so severity had nowhere to go. Redesigned after ISO 3864 practice: a
+  solid band with one signal word (BLOCKED), WARDEN named on it, 45 degree hazard stripes, dark text on the red;
+  the body text is plain, and red stays only on the band, a 1 px edge and the WHY label. No glow (JSIL).
+
+Not built, on purpose: a VLM that judges whether a step was done (zero-shot procedural mistake detection is near
+chance on real video, arxiv.org/html/2412.11927v4), so confirmation stays human. Considered for later: a gesture
+calibration screen, a recorded-landmark replay harness that counts false activations per hour, pack-order checks
+for skipped steps, and a glove mode with a fingertip marker.
+
+- **Review round** (independent agent, probes): opening the ledger, or running the checker, sealed forged tail
+  events (now: seal once, recorded; checker read-only); a cut tail was invisible (now: full head and `--expect`);
+  the link's "sealed" label was not hashed; the fist latch blocked a pinch with the other fingers curled and stayed
+  latched; a full chain walk ran on the HUD thread for every repair record; arm time skipped ATLAS and CANTUS and
+  was missing from app.py; the reach toast covered the SIGHT row; SIGHT judged low light late after a reset; a
+  tilted hand could read as a reach; a hand switch mid-pinch compared different hands. All fixed with tests.
+  A second pass on the fixes found: wiping `chain_meta` let the app re-seal a forged tail (now a chain this
+  version wrote is never treated as legacy, and an "upgrade" link after a written one is flagged); the checker
+  crashed on non-ledger files and on folder names with `#` or `%` (now a clean exit 2, proper file URI); a later
+  repair record did not re-check the point it continued from (now it re-hashes that row); a locked database at
+  first open could stop the app (now the seal waits for a later open). Known limit: the first repair record of a
+  run walks the whole chain (about 1 s at 200,000 events, measured in review).
+
+Tests: `tests/test_sight.py` (23), `tests/test_ledger_chain.py` (24), `tests/test_signal_band.py` (4).
+Live on the Mac: not yet. SIGHT thresholds, the reach tolerance and the arm weights need one tuning session there.
+
 ---
 
 ## Still open

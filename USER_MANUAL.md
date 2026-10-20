@@ -26,6 +26,12 @@ JAMES guides a technician through a repair without touching a screen.
 | Point | Index finger toward the tag, or touch the tag with your fingertip. Hold still for half a second. | "This machine" |
 | Pinch | Touch thumb tip to index fingertip and hold until the ring turns green (0.6 s). Release before the next pinch. | "Yes / confirm" |
 
+A pinch that starts as a closing fist does not count; open your fingers and pinch again. If your hand moves toward
+or away from the camera while you hold a pinch (reaching for a tool), the pinch is dropped: release and pinch again.
+**SIGHT** (bottom left) says when the camera can't see your hand well: add light, or use bare hands or light
+gloves against a plain background. An amber **X** marks where a lost hand was last seen. After a long stretch of
+raised-arm use JAMES suggests voice once; rest your arm and it resets.
+
 **Inside ATLAS (X)** the hand works the drawing instead, and nothing can be confirmed until you close it:
 
 | Gesture | Does |

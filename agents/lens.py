@@ -12,6 +12,7 @@ import cv2
 import numpy as np
 
 import config
+from james_core import handpose as HP
 import owner as OW
 from james_core.motion import HandSmoother, Swipe, Trail
 
@@ -50,6 +51,8 @@ class LensResult:
                                                  # for the whole pinch): pinching drags the tip off target
     speed: float = 0.0                # fingertip speed, px/s (smoothed)
     swipe: str | None = None          # 'left' | 'right' | 'up' | 'down' on the frame a swipe completes (raw coords)
+    reaching: bool = False            # this pinch changed hand size a lot (moving to or from the camera, e.g.
+                                      # reaching for a tool): sticky until the pinch ends, so a hold never fires
 
 
 def owner_key_id() -> int | None:
@@ -79,6 +82,12 @@ def split_markers(corners, ids, key_id: int | None) -> tuple[list, list]:
 
 
 class Lens:
+    # pinch guards (class defaults too, so a Lens built without __init__ in a test still has them)
+    _fist_latch = False
+    _pinch_palm = None
+    _pinch_wrist = None
+    _reached = False
+
     def __init__(self):
         from mediapipe.tasks import python as mpt
         from mediapipe.tasks.python import vision
@@ -94,6 +103,9 @@ class Lens:
         self._stable_since: int | None = None     # ms timestamp when the current tag was first pointed at
         self._last_id = None
         self._pinched = False
+        self._fist_latch = False          # a pinch that began as a fist: ignored until the fingers open again
+        self._pinch_palm: float | None = None
+        self._reached = False
         self.owner = make_owner()
         self.owner_paused = False
         self._enroll: OW.Enroller | None = None
@@ -193,21 +205,47 @@ class Lens:
             idx, res.owner, res.owner_score = self.owner.select(frame_bgr, raw or hands, ts_ms, keys)
         res.others = [hd for i, hd in enumerate(hands) if i != idx]
         if idx is None:
-            self._pinched = False
+            self._pinched = self._fist_latch = self._reached = False
+            self._pinch_palm = self._pinch_wrist = None
             return
         pts = hands[idx]
         res.hand, res.fingertip = pts, pts[TIP]
         palm = math.dist(pts[WRIST], pts[MID_MCP]) or 1.0
         res.pinch_ratio = math.dist(pts[THUMB_TIP], pts[TIP]) / palm
+        fist = self._is_fist(pts)
         # hysteresis: close below PINCH_RATIO, open only above 1.4x, so jitter can't make a double pinch
-        if self._pinched:
-            self._pinched = res.pinch_ratio < config.PINCH_RATIO * 1.4
+        release = config.PINCH_RATIO * 1.4
+        if self._fist_latch:                               # closing a fist puts the thumb on the index: not a pinch
+            if res.pinch_ratio >= release:                 # until the thumb leaves the index
+                self._fist_latch = False
+            self._pinched = False
+        elif self._pinched:
+            self._pinched = res.pinch_ratio < release
         else:
             self._pinched = res.pinch_ratio < config.PINCH_RATIO
-        res.pinching = self._pinched
+            # the same test ATLAS uses (james_core/handpose.py): a pinch needs the index finger at least half out;
+            # with the index folded, the thumb on it is a closing fist. Other fingers may be curled.
+            if self._pinched and getattr(config, "PINCH_FIST_LATCH", True) and HP.ratios(pts)[0] <= HP.PINCH_MIN_INDEX:
+                self._pinched, self._fist_latch = False, True
+        # reach: the hand grows or shrinks a lot during one pinch (moving to or from the camera). A deliberate
+        # pinch on a target keeps its size; grabbing a tool does not. Scale = geometric mean of palm length and
+        # knuckle width, so tilting the hand (which shortens one of them) moves it about half as much as a reach.
+        scale = math.sqrt(palm * (math.dist(pts[5], pts[17]) or palm))
+        # another hand took over mid-pinch: its wrist is far from where the last frame's was (MediaPipe's list order
+        # is not stable with two hands, so the list index cannot tell)
+        swapped = self._pinch_wrist is not None and math.dist(pts[0], self._pinch_wrist) > 2.0 * scale
+        if self._pinched:
+            if self._pinch_palm is None or swapped:
+                self._pinch_palm, self._reached = scale, False
+            elif abs(scale / self._pinch_palm - 1.0) > getattr(config, "PINCH_REACH_TOL", 0.3):
+                self._reached = True
+            self._pinch_wrist = pts[0]
+        else:
+            self._pinch_palm, self._pinch_wrist, self._reached = None, None, False
+        res.pinching, res.reaching = self._pinched, self._reached
         res.open_palm = (not res.pinching) and self._is_open_palm(pts, palm)
         res.peace = (not res.pinching) and self._is_peace(pts, palm)
-        res.fist = self._is_fist(pts)
+        res.fist = fist
         res.pointed, res.point_conf = self._pointing(pts, res.tags)
 
     @staticmethod

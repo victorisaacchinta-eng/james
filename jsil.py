@@ -451,6 +451,20 @@ def hints(img, s, visible=True):
     text(img, fit(s, W - 32, 11.5), 16, H - 11, 11.5, MUTED)
 
 
+
+def sight(img, st):
+    """SIGHT (james_core/sight.py) lost hand: a still amber X where the hand was last seen, labelled, so nothing
+    pretends to track it (invalid data shown as invalid, the way cockpit displays mark it). No animation. The
+    SIGHT hint itself is a row in the bottom-left perception stack (james.py)."""
+    if st is None or st.lost_at is None:
+        return
+    x, y = st.lost_at
+    r = 8
+    cv2.line(img, (x - r, y - r), (x + r, y + r), CONFIRM, 2, cv2.LINE_AA)
+    cv2.line(img, (x - r, y + r), (x + r, y - r), CONFIRM, 2, cv2.LINE_AA)
+    text(img, "HAND LOST", x + r + S2, y + 4, 10, CONFIRM, "semi", track=0.8)
+
+
 # ---------- cached layers (JSIL section 41) ----------
 class LayerCache:
     """Draws content once, keeps it as colour + alpha, and composites it each frame.

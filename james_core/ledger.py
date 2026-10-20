@@ -1,9 +1,20 @@
 """LEDGER storage: an append-only event log in SQLite, the repair record,
 and recall of senior-approved past jobs.
 
-UPDATE and DELETE on events are refused by triggers, so the log can only grow."""
+UPDATE and DELETE on events are refused by triggers, so the log can only grow.
+
+Hash chain (iteration 10): every event also gets a row in `chain` holding SHA-256(previous hash + the event),
+written in the same transaction. Triggers stop casual edits; the chain makes any edit that slips past them (for
+example after someone drops the triggers) visible to `verify()` and `python -m tools.verify_ledger`. It is
+tamper-EVIDENT, not tamper-proof: someone who rewrites every row and recomputes every hash, or removes the newest
+events with their links, can hide it from the database alone. So every repair record prints the head (event number
+and full hash); `python -m tools.verify_ledger --expect SEQ:HASH` checks a saved head against the database.
+Events written before the chain existed are sealed ONCE, the first time this version opens the database; the
+event number it sealed up to is recorded in `chain_meta` and never moves, so anything written around the ledger
+later is reported as unlinked, never sealed."""
 from __future__ import annotations
 
+import hashlib
 import json
 import sqlite3
 import threading
@@ -35,6 +46,24 @@ CREATE TRIGGER IF NOT EXISTS reviews_no_update BEFORE UPDATE ON job_reviews
 BEGIN SELECT RAISE(ABORT, 'reviews are append-only'); END;
 CREATE TRIGGER IF NOT EXISTS reviews_no_delete BEFORE DELETE ON job_reviews
 BEGIN SELECT RAISE(ABORT, 'reviews are append-only'); END;
+CREATE TABLE IF NOT EXISTS chain(
+  seq INTEGER PRIMARY KEY,
+  prev TEXT NOT NULL,
+  hash TEXT NOT NULL,
+  sealed TEXT NOT NULL CHECK (sealed IN ('write', 'upgrade'))
+);
+CREATE TRIGGER IF NOT EXISTS chain_no_update BEFORE UPDATE ON chain
+BEGIN SELECT RAISE(ABORT, 'chain is append-only'); END;
+CREATE TRIGGER IF NOT EXISTS chain_no_delete BEFORE DELETE ON chain
+BEGIN SELECT RAISE(ABORT, 'chain is append-only'); END;
+CREATE TABLE IF NOT EXISTS chain_meta(
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+CREATE TRIGGER IF NOT EXISTS chain_meta_no_update BEFORE UPDATE ON chain_meta
+BEGIN SELECT RAISE(ABORT, 'chain_meta is append-only'); END;
+CREATE TRIGGER IF NOT EXISTS chain_meta_no_delete BEFORE DELETE ON chain_meta
+BEGIN SELECT RAISE(ABORT, 'chain_meta is append-only'); END;
 CREATE TABLE IF NOT EXISTS jobs(
   job_id TEXT PRIMARY KEY,
   asset_id TEXT NOT NULL,
@@ -46,6 +75,18 @@ CREATE TABLE IF NOT EXISTS jobs(
   created TEXT
 );
 """
+
+
+GENESIS = "0" * 64
+
+
+def link(prev: str, seq: int, ts: str, session_id: str, kind: str, accepted: int, payload: str,
+         sealed: str = "write") -> str:
+    """One chain link. The payload is hashed exactly as stored (its JSON text), so nothing is re-serialised. How the
+    link was made (at write, or sealed at upgrade) is hashed too, so it cannot be relabelled."""
+    body = json.dumps([seq, ts, session_id, kind, int(accepted), payload, sealed], separators=(",", ":"),
+                      ensure_ascii=False)
+    return hashlib.sha256((prev + "\n" + body).encode("utf-8")).hexdigest()
 
 
 def _default(o: Any):
@@ -67,21 +108,154 @@ def _locked(fn):
 
 
 class Ledger:
-    def __init__(self, path: str = ":memory:"):
+    def __init__(self, path: str = ":memory:", readonly: bool = False):
+        """readonly: open an existing database without creating tables or sealing anything (the checker uses it)."""
         # Shared across the HUD loop and agent threads; every access goes through one lock.
-        self.db = sqlite3.connect(path, check_same_thread=False)
         self._lock = threading.RLock()
+        self.readonly = readonly
+        self._verified: tuple[int, str] | None = None      # (seq, hash) this process has already checked up to
+        self.sealed_on_open = 0
+        if readonly:
+            from pathlib import Path
+            self.db = sqlite3.connect(Path(path).resolve().as_uri() + "?mode=ro", uri=True, check_same_thread=False)
+            return
+        self.db = sqlite3.connect(path, check_same_thread=False)
         self.db.executescript(SCHEMA)
+        self.sealed_on_open = self._seal_legacy()
 
     # ---- event log ----
     @_locked
     def append(self, session_id: str, kind: str, payload: dict, accepted: bool = True) -> int:
-        cur = self.db.execute(
-            "INSERT INTO events(ts, session_id, kind, accepted, payload) VALUES (?,?,?,?,?)",
-            (datetime.now(timezone.utc).isoformat(), session_id, kind, int(accepted),
-             json.dumps(payload, default=_default, sort_keys=True)))
+        ts, text = datetime.now(timezone.utc).isoformat(), json.dumps(payload, default=_default, sort_keys=True)
+        try:
+            cur = self.db.execute("INSERT INTO events(ts, session_id, kind, accepted, payload) VALUES (?,?,?,?,?)",
+                                  (ts, session_id, kind, int(accepted), text))
+            seq, prev = cur.lastrowid, self._head()[1]
+            self.db.execute("INSERT INTO chain(seq, prev, hash, sealed) VALUES (?,?,?,'write')",
+                            (seq, prev, link(prev, seq, ts, session_id, kind, int(accepted), text)))
+            self.db.commit()
+        except Exception:
+            self.db.rollback()                         # never an event without its link, or a link without its event
+            raise
+        return seq
+
+    def _head(self) -> tuple[int, str]:
+        r = self.db.execute("SELECT seq, hash FROM chain ORDER BY seq DESC LIMIT 1").fetchone()
+        return (r[0], r[1]) if r else (0, GENESIS)
+
+    def _meta(self, key: str):
+        try:
+            r = self.db.execute("SELECT value FROM chain_meta WHERE key=?", (key,)).fetchone()
+        except sqlite3.OperationalError:              # read-only open of a database that never had a chain
+            return None
+        return r[0] if r else None
+
+    @_locked
+    def _seal_legacy(self) -> int:
+        """Once per database, ever: chain the events an older JAMES wrote before the chain existed, and record how
+        far that went. Every later open does nothing here, so an event written around the ledger stays unlinked
+        (and verify() reports it) instead of being sealed by the app."""
+        if self._meta("legacy_sealed_upto") is not None:
+            return 0
         self.db.commit()
-        return cur.lastrowid
+        try:
+            self.db.execute("BEGIN IMMEDIATE")         # no other process can append between the read and the seal
+        except sqlite3.OperationalError:               # another JAMES holds the write lock: seal on a later open
+            return 0
+        try:
+            if self._meta("legacy_sealed_upto") is not None:
+                self.db.rollback()
+                return 0
+            last, prev = self._head()
+            n, upto = 0, last
+            wrote = self.db.execute("SELECT 1 FROM chain WHERE sealed='write' LIMIT 1").fetchone()
+            for seq, ts, sid, kind, acc, text in ([] if wrote else self.db.execute(
+                    "SELECT seq, ts, session_id, kind, accepted, payload FROM events WHERE seq > ? ORDER BY seq",
+                    (last,)).fetchall()):                   # a chain this version wrote is never "legacy": seal nothing
+                h = link(prev, seq, ts, sid, kind, acc, text, "upgrade")
+                self.db.execute("INSERT INTO chain(seq, prev, hash, sealed) VALUES (?,?,?,'upgrade')", (seq, prev, h))
+                prev, upto, n = h, seq, n + 1
+            self.db.execute("INSERT INTO chain_meta(key, value) VALUES ('legacy_sealed_upto', ?)", (str(upto),))
+            self.db.execute("INSERT INTO chain_meta(key, value) VALUES ('legacy_sealed_at', ?)",
+                            (datetime.now(timezone.utc).isoformat(),))
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+            raise
+        return n
+
+    @_locked
+    def verify(self, since: tuple[int, str] | None = None) -> dict:
+        """Recompute the chain. Full walk by default; since=(seq, hash) continues from a point already checked (the
+        repair record uses that, so it costs only the new events). ok is False on an edited, removed, reordered or
+        unlinked event; problems lists what was found (at most 20 lines). head is (seq, hash) of the last link."""
+        if not self._has_table("events"):
+            return dict(ok=False, events=0, head=(0, GENESIS), first_bad=None, sealed_at_upgrade=None, unchained=True,
+                        not_a_ledger=True, problems=["this file is not a JAMES ledger (no events table)"])
+        upto_s = self._meta("legacy_sealed_upto")
+        if upto_s is None and not self._has_chain():
+            return dict(ok=False, events=self.db.execute("SELECT COUNT(*) FROM events").fetchone()[0], head=(0, GENESIS),
+                        first_bad=None, sealed_at_upgrade=None, unchained=True,
+                        problems=["this database has no chain yet: open it once with this version of JAMES"])
+        upto = int(upto_s or 0)
+        start, expected = since or (0, GENESIS)
+        problems: list[str] = []
+        first_bad = None
+        if since is None:
+            for (s_,) in self.db.execute("SELECT c.seq FROM chain c LEFT JOIN events e ON e.seq = c.seq "
+                                         "WHERE e.seq IS NULL ORDER BY c.seq LIMIT 10"):
+                problems.append(f"event #{s_} is gone but its link remains (an event was removed)")
+                first_bad = first_bad if first_bad is not None else s_
+        if since is not None and start:                # the point we continue from must still be what we checked
+            r = self.db.execute("SELECT e.ts, e.session_id, e.kind, e.accepted, e.payload, c.prev, c.hash, c.sealed "
+                                "FROM events e JOIN chain c ON c.seq = e.seq WHERE e.seq=?", (start,)).fetchone()
+            if r is None or r[6] != expected or link(r[5], start, *r[:5], r[7]) != expected:
+                problems.append(f"event #{start} changed or was removed after it was checked earlier in this run")
+                first_bad = start
+        n, head, upgrade, seen_write = 0, (start, expected), [], False
+        cur = self.db.execute("SELECT e.seq, e.ts, e.session_id, e.kind, e.accepted, e.payload, c.prev, c.hash, "
+                              "c.sealed FROM events e LEFT JOIN chain c ON c.seq = e.seq WHERE e.seq > ? "
+                              "ORDER BY e.seq", (start,))
+        for seq, ts, sid, kind, acc, text, prev, h, sealed in cur:
+            n += 1
+            before = len(problems)
+            if h is None:
+                problems.append(f"event #{seq} has no link (written around the ledger)")
+            else:
+                if prev != expected:
+                    problems.append(f"link before event #{seq} does not follow the previous one (removed or reordered)")
+                if link(prev, seq, ts, sid, kind, acc, text, sealed) != h:
+                    problems.append(f"event #{seq} ({kind}) was changed after it was written")
+                if sealed == "upgrade":
+                    if seq > upto:
+                        problems.append(f"event #{seq} claims to be sealed at upgrade but is newer than the upgrade")
+                    elif seen_write:
+                        problems.append(f"event #{seq} is sealed at upgrade after an event written with its link")
+                    upgrade.append(seq)
+                else:
+                    seen_write = True
+                expected, head = h, (seq, h)
+            if len(problems) > before and first_bad is None:
+                first_bad = seq
+        ok = not problems
+        if ok:
+            self._verified = head
+        return dict(ok=ok, events=n if since else self.db.execute("SELECT COUNT(*) FROM events").fetchone()[0],
+                    head=head, first_bad=first_bad, problems=problems[:20], unchained=False,
+                    sealed_at_upgrade=(upgrade[0], upgrade[-1], len(upgrade)) if upgrade else None,
+                    legacy_sealed_upto=upto, legacy_sealed_at=self._meta("legacy_sealed_at"))
+
+    def _has_table(self, name: str) -> bool:
+        return self.db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (name,)).fetchone() is not None
+
+    def _has_chain(self) -> bool:
+        return self._has_table("chain")
+
+    @_locked
+    def check_head(self, seq: int, h: str) -> bool:
+        """A head saved earlier (from a repair record) is still in the chain, unchanged."""
+        r = self.db.execute("SELECT c.hash FROM chain c JOIN events e ON e.seq = c.seq WHERE c.seq=?", (seq,)).fetchone()
+        return bool(r) and r[0] == h
 
     @_locked
     def events(self, session_id: str) -> list[dict]:
@@ -209,4 +383,15 @@ class Ledger:
                 lines.append(f"- {e['ts']}  TECHNICIAN answered: {p['question']} -> {'yes' if p['answer'] else 'no'}")
             elif e["kind"] in ("escalated", "complete", "target_confirmed", "intent_captured"):
                 lines.append(f"- {e['ts']}  {e['kind'].upper()}")
+        since = self._verified                         # full walk on the first record of a run, then only new events
+        v = self.verify(since=since)
+        if v.get("unchained"):
+            lines += ["", "Ledger chain: none yet (older database)"]
+        elif not v["ok"]:
+            lines += ["", f"Ledger chain: BROKEN at event #{v['first_bad']}: {v['problems'][0]}"]
+        else:
+            scope = (f"all {v['events']} events checked" if since is None else
+                     f"{v['events']} new events checked after #{since[0]} (checked earlier in this run)")
+            lines += ["", f"Ledger chain: intact, {scope}. Head #{v['head'][0]} {v['head'][1]}",
+                      f"Check this head later: python -m tools.verify_ledger --expect {v['head'][0]}:{v['head'][1]}"]
         return "\n".join(lines) + "\n"

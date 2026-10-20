@@ -11,6 +11,7 @@ from __future__ import annotations
 import time
 
 import cv2
+import numpy as np
 
 import jsil as J
 
@@ -55,6 +56,20 @@ STATE_COLOR = {"LOCKED": J.LOCKED, "TARGET_PENDING": J.CYAN, "AWAITING_CONFIRMAT
                "SAFETY_BLOCKED": J.ERROR, "COMPLETE": J.SUCCESS, "LOGGED": J.SUCCESS, "ESCALATED": J.CONFIRM}
 
 
+def signal_band(img, x, y, w, h, word, owner=""):
+    """A safety signal band, after ISO 3864 practice: one solid colour, one signal word in a bold face, and 45 degree
+    hazard stripes at the end. Dark text on the red for contrast. No glow, no animation (JSIL)."""
+    cv2.rectangle(img, (x, y), (x + w - 1, y + h - 1), J.ERROR, -1)
+    sw = min(112, w // 4)                                    # stripe field at the right end
+    roi = img[y:y + h, x + w - sw:x + w]
+    for k in range(-h, sw + h, 16):                          # 8 px dark stripes every 16 px, 45 degrees
+        pts = np.array([[k, h], [k + 8, h], [k + 8 + h, 0], [k + h, 0]], np.int32)
+        cv2.fillConvexPoly(roi, pts, J.BLACK, cv2.LINE_AA)
+    J.text(img, word, x + J.S4, y + h // 2 + 5, 13, J.BLACK, "semi", track=1.6)
+    if owner:
+        J.text(img, owner, x + w - sw - J.S3, y + h // 2 + 4, 10, J.BLACK, "semi", anchor="r", track=1.0)
+
+
 def _state_label(s: str) -> str:
     return STATE_LABEL.get(s, s.replace("_", " ").capitalize())
 
@@ -78,7 +93,10 @@ class Hud:
         head_col = v.get("headline_color", AMBER)
         if head_col == AMBER and state != "AWAITING_CONFIRMATION":
             head_col = J.TEXT                                # amber is for confirmation, not for every prompt
-        rows.append(("label", "Safety check" if state == "SAFETY_BLOCKED" else "Current task", STATE_COLOR.get(state, J.TEXT_2)))
+        if state == "SAFETY_BLOCKED":
+            head_col = J.TEXT                                # the signal band carries the red; text stays readable
+        else:                                                # (blocked: the band replaces this label)
+            rows.append(("label", "Current task", STATE_COLOR.get(state, J.TEXT_2)))
         for ln in J.wrap(head, int(width * 0.9), 18):            # the bold headline runs wider than measured
             rows.append(("head", ln, head_col))
         if v.get("prompt"):
@@ -97,10 +115,10 @@ class Hud:
                 rows.append(("label", "Why", J.ERROR))
             elif r.startswith("Rule:"):
                 for ln in J.wrap(r, width, 12, "mono"):
-                    rows.append(("mono", ln, J.ERROR))
+                    rows.append(("mono", ln, J.TEXT_2))
             elif r.startswith("Reason:"):
                 for ln in J.wrap(r.split(":", 1)[1].strip(), width, 15):
-                    rows.append(("body", ln, J.ERROR))
+                    rows.append(("reason", ln))
             else:
                 k, _, val = r.partition(": ")
                 col = J.TEXT_2
@@ -128,7 +146,8 @@ class Hud:
                 rows.append(("mono", ln, J.MUTED))
         return rows
 
-    HEIGHT = {"label": 22, "head": 25, "prompt": 21, "step": 26, "body": 19, "kv": 19, "mono": 17, "gap": 8}
+    HEIGHT = {"label": 22, "head": 25, "prompt": 21, "step": 26, "body": 19, "reason": 21, "kv": 19, "mono": 17, "gap": 8}
+    BAND_H = 30                                              # the WARDEN signal band on a blocked card
 
     def _card(self, img, v, x, y, w, max_h):
         rows = self._card_lines(v, w - 2 * J.S4)
@@ -136,13 +155,15 @@ class Hud:
         return self.card_cache.draw(img, key, x, y, w, max_h, lambda c: self._card_draw(c, v, rows, 0, 0, w, max_h))
 
     def _card_draw(self, img, v, rows, x, y, w, max_h):
-        need = J.S4 + sum(self.HEIGHT[r[0]] for r in rows) + J.S3
-        h = min(max_h, need)
         blocked = v["state"] == "SAFETY_BLOCKED"
-        J.panel(img, x, y, w, h, 0.86, accent=J.ERROR if blocked else STATE_COLOR.get(v["state"], J.TEAL))
+        band = self.BAND_H if blocked else 0
+        need = J.S4 + band + sum(self.HEIGHT[r[0]] for r in rows) + J.S3
+        h = min(max_h, need)
+        J.panel(img, x, y, w, h, 0.86, accent=None if blocked else STATE_COLOR.get(v["state"], J.TEAL))
         if blocked:
-            cv2.rectangle(img, (x, y), (x + w - 1, y + h - 1), J.ERROR, 2)
-        yy = y + J.S4
+            signal_band(img, x, y, w, band, "BLOCKED", "WARDEN")
+            cv2.rectangle(img, (x, y), (x + w - 1, y + h - 1), J.ERROR, 1)
+        yy = y + J.S4 + band
         tx = x + J.S4
         for i, r in enumerate(rows):
             rh = self.HEIGHT[r[0]]
@@ -161,6 +182,8 @@ class Hud:
                 J.text(img, r[1], tx, yy + 20, 19, J.TEXT, "semi")
             elif kind == "body":
                 J.text(img, r[1], tx, yy + 14, 13 if r[2] != J.ERROR else 15, r[2])
+            elif kind == "reason":
+                J.text(img, r[1], tx, yy + 15, 15, J.TEXT)
             elif kind == "kv":
                 if r[1]:
                     J.text(img, r[1].upper(), tx, yy + 13, 10, J.MUTED, "semi", track=0.8)
@@ -262,6 +285,16 @@ class Hud:
         # task card
         self._card(img, v, J.S4, 52 + J.S4, cw, H - 52 - J.S4 - 44 - 90)
 
+        # SIGHT: tracking quality, bottom left above the hints (gloves, light, contrast), and the lost-hand X
+        sg = v.get("sight")
+        if sg is not None and atlas is None:
+            if sg.hint:
+                y = H - 30 - J.S3
+                J.panel(img, J.S4, y - 26, int(J.measure(sg.hint, 13)) + 108, 26, 0.86)
+                J.text(img, "SIGHT", J.S4 + 10, y - 9, 10, J.CONFIRM, "semi", track=0.8)
+                J.text(img, sg.hint, J.S4 + 84, y - 8, 13, J.TEXT)
+            J.sight(img, sg)
+
         # telemetry (F)
         if tm is not None and v.get("show_telemetry"):
             J.telemetry_card(img, W - 196 - J.S4, 52 + J.S4, tm)
@@ -269,6 +302,7 @@ class Hud:
         # feedback
         if self.banner and time.time() < self.banner[2]:
             msg, col, _ = self.banner
-            J.toast(img, msg, col, y_bottom=H - 30 - J.S4)
+            lift = 26 + J.S2 if (sg is not None and sg.hint and atlas is None) else 0   # never over the SIGHT row
+            J.toast(img, msg, col, y_bottom=H - 30 - J.S4 - lift)
         J.hints(img, v.get("keys", ""), self.show_hints)
         return img

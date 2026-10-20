@@ -48,6 +48,8 @@ import numpy as np
 import commands as C
 import config
 from james_core import egress
+from james_core.armtime import ArmTime
+from james_core.sight import Sight, brightness
 import jsil as J
 import launcher_apps as LA
 import collect
@@ -1941,6 +1943,13 @@ class James:
 
         # perception + event stream (bottom left, compact, only when there is something real)
         y = H - 30 - J.S3
+        sg = getattr(self, "sight_state", None)          # SIGHT: tracking quality (light, gloves, contrast)
+        sight_row = bool(sg is not None and sg.hint and not self.rec.active and self.typing is None)
+        if sight_row:
+            J.panel(img, J.S4, y - 26, int(J.measure(sg.hint, 13)) + 108, 26, 0.86)
+            J.text(img, "SIGHT", J.S4 + 10, y - 9, 10, J.CONFIRM, "semi", track=0.8)
+            J.text(img, sg.hint, J.S4 + 84, y - 8, 13, J.TEXT)
+            y -= 26 + J.S2
         if lens is not None and not lens.hand and getattr(lens, "others", None) and getattr(lens, "owner", "") == "searching":
             g = (wrong_key_hint(lens) or
                  "Looking for the owner key. Show the key to the camera, or press X so any hand can drive."
@@ -2012,7 +2021,7 @@ class James:
         if self.enrolling:
             self.draw_enroll(img, lens)
         if s.msg and time.time() < s.msg[2]:
-            J.toast(img, s.msg[0], s.msg[1], y_bottom=H - 30 - J.S4)
+            J.toast(img, s.msg[0], s.msg[1], y_bottom=H - 30 - J.S4 - (26 + J.S2 if sight_row else 0))
         J.hints(img, "Open palm = launcher  |  V sign = talk, fist = run  |  point + pinch = choose  |  I identify  |  "
                      "V talk  |  / type  |  O open  |  L launcher  |  " + ("X key off/on" if getattr(lens, "owner_kind", "") == "key"
                      else "K enrol ring  |  X forget ring") + "  |  M mute  |  Esc cancel  |  U lock  |  "
@@ -2118,6 +2127,9 @@ def main():
         print("  owner      : off, the largest hand drives")
     prev_owner = None
     atlas_was_on = False
+    sight = Sight(low_light=getattr(config, "SIGHT_LOW_LIGHT", 55)) if getattr(config, "SIGHT", True) else None
+    arm = ArmTime(nudge_s=config.ARM_NUDGE_S) if getattr(config, "ARM_NUDGE_S", 0) else None
+    sight_code, n_frame = "OK", 0
     j.speak(T.greeting(j.sir))
     print(f"  talkback   : {j.talker.describe()}; {'off' if j.talker.muted else 'on'} (switch at the top, or M)")
     tm = j.timer
@@ -2149,7 +2161,11 @@ def main():
             if atlas_was_on and not j.inner_on():          # just closed: no gesture timer carries over from before
                 pinch_start, fired, palm_since = None, bool(view.pinching), None
                 g.update({k_: None for k_ in g})
+                if sight is not None:
+                    sight.reset()
             atlas_was_on = j.inner_on()
+            if arm is not None and j.inner_on():           # ATLAS and CANTUS are arm-heavy: count, but never nudge there
+                arm.update(now, view.hand[0][1] if view.hand else None, frame.shape[0], quiet=True)
             if j.cantus_on():                              # CANTUS owns the window too
                 out = j.cantus_frame(frame, view, t_cap, lens)
                 tm.mark("render")
@@ -2170,6 +2186,19 @@ def main():
                 if k != 255 and j.atlas_key(k, lens, now) == "quit":
                     break
                 continue
+            st = None
+            if sight is not None:                          # tracking quality: light every 5th frame (cheap anyway)
+                st = sight.update(now, tip, brightness(raw) if n_frame % 5 == 0 else None)
+                if st.code != sight_code:
+                    j.write(f"SIGHT {st.code} light={st.light:.0f} flicker={st.flicker}")
+                    sight_code = st.code
+            n_frame += 1
+            if arm is not None:
+                ar = arm.update(now, view.hand[0][1] if view.hand else None, H,
+                                quiet=bool(j.rec.active) or j.typing is not None)
+                if ar.nudge:
+                    j.flash("Arm break? Hold a V sign and say it instead.", AMBER, 5)
+                    j.write(f"ARM nudge load={ar.load} up={ar.up_s}s")
             # open palm -> launcher, ONLY when idle (no task, not locked, not just after a choice); time-based hold
             palm_ok = view.open_palm and j.palm_allowed(now)
             if palm_ok:
@@ -2203,7 +2232,10 @@ def main():
             else:
                 hover = next((b.key for b in j._dock if b.hit(aim)), None)
             progress = 0.0
-            if view.pinching and hover and now >= cool and not fired:
+            if view.pinching and getattr(view, "reaching", False) and not fired:
+                pinch_start, fired = None, True           # a reach (hand grew or shrank) never presses; release first
+                j.write("PINCH dropped: reach")
+            elif view.pinching and hover and now >= cool and not fired:
                 pinch_start = pinch_start or now
                 progress = (now - pinch_start) * 1000 / PINCH_MS
                 if progress >= 1:
@@ -2215,7 +2247,9 @@ def main():
                     j.press(hover, raw)
             elif not view.pinching:
                 pinch_start, fired = None, False
+            j.sight_state = st
             out = j.draw(frame, view, hover, progress)
+            J.sight(out, st)
             if j.eyes_on and eyes is not None:
                 from agents.eyes import draw as draw_eyes, mirror as mirror_eyes
                 er = eyes.process(raw, int((time.monotonic() - t0) * 1000))
@@ -2301,6 +2335,8 @@ def main():
                 elif j.busy:
                     j.end_task("Task cancelled")
     finally:
+        if arm is not None:
+            j.write(arm.summary())
         if j.cantus is not None:                          # never leave a song playing (or a paused player) behind
             j.cantus.close()
         lens.close(); cap.release(); cv2.destroyAllWindows()

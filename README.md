@@ -103,6 +103,13 @@ any step that is unsafe. Everything runs on the laptop: local model, local searc
 WARDEN is plain Python plus the pack's rule file. The model can suggest a step; only WARDEN can let it through,
 and only a pinch on the current, unexpired, allowed step moves the job forward.
 
+**The pinch has to be a pinch.** A pinch that starts as a closing fist, or whose hand moves toward or away from the
+camera while held (reaching for a tool), never confirms a step. **SIGHT** says when tracking can't be trusted (low
+light, a hand that keeps dropping out, often dark gloves) and marks a lost hand with a still amber X instead of
+guessing. Every logged event is **hash-chained**: `python -m tools.verify_ledger` (read-only) names the first edited,
+unlinked or removed event, and each repair record ends with the chain head, which `--expect SEQ:HASH` checks later.
+Details, limits and sources: `docs/ITERATIONS.md`, iteration 10.
+
 ## ◆ ATLAS: where, not just what
 
 <p align="center">

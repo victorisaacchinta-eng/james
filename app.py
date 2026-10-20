@@ -28,6 +28,8 @@ from agents.page import ManualIndex
 from atlas import Atlas, StepContext
 import jsil as J
 from hud import AMBER, GREEN, RED, Hud
+from james_core.armtime import ArmTime
+from james_core.sight import Sight, brightness
 from james_core import egress
 from james_core.actions import ActionRegistry
 from james_core.ledger import Ledger
@@ -546,6 +548,9 @@ def run_live(voice: bool):
         sys.exit("Camera not available. Allow camera access for Terminal in System Settings > Privacy & Security.")
     lens = Lens()
     t0, gate = time.monotonic(), PinchHold()
+    sight = Sight(low_light=getattr(config, "SIGHT_LOW_LIGHT", 55)) if getattr(config, "SIGHT", True) else None
+    arm = ArmTime(nudge_s=config.ARM_NUDGE_S) if getattr(config, "ARM_NUDGE_S", 0) else None
+    n_frame = 0
     timer = J.FrameTimer()                      # measured telemetry (F shows it)
     cv2.namedWindow("JAMES", cv2.WINDOW_NORMAL)
     try:
@@ -573,13 +578,24 @@ def run_live(voice: bool):
                     app.target(r.tags[0].asset_id, "asset_tag", 0.80)
                 elif not r.tags and getattr(r, "keys", None):
                     app.key_card_seen()
-            progress = gate.step(app, r.pinching, now)       # pinch-and-hold (never while ATLAS is open)
+            progress = gate.step(app, r.pinching, now, getattr(r, "reaching", False))   # pinch-and-hold (never in ATLAS)
             v = app.view()
             v["pinch_progress"] = progress
             if app.recorder.active:
                 v["headline"] = "Listening... press V to stop"
             if config.MIRROR:                       # tags are read on the raw frame; only the view is flipped
                 frame, r = cv2.flip(frame, 1), mirror_result(r, frame.shape[1])
+            if sight is not None:                   # tracking quality (gloves, light, contrast); after the mirror
+                if app.atlas_open():
+                    sight.reset()
+                else:
+                    v["sight"] = sight.update(now, r.fingertip, brightness(frame) if n_frame % 5 == 0 else None)
+            n_frame += 1
+            if arm is not None:                     # raised-arm time; ATLAS and voice count but never nudge
+                ar = arm.update(now, r.hand[0][1] if r.hand else None, frame.shape[0],
+                                quiet=app.atlas_open() or app.recorder.active)
+                if ar.nudge:
+                    app.hud.flash("Arm break? Rest your arm and press V to say it instead.", AMBER, 5)
             v["telemetry"], v["show_telemetry"] = timer, app.show_telemetry
             out = app.hud.draw(frame, v, r)
             J.splash(out, time.monotonic() - t0)       # brand splash for the first ~1.6 s only
@@ -591,19 +607,30 @@ def run_live(voice: bool):
             if k != 255 and not app.key(chr(k).lower()):
                 break
     finally:
+        if arm is not None:
+            print("  " + arm.summary())
         lens.close(); cap.release(); cv2.destroyAllWindows()
 
 
 class PinchHold:
     """Pinch and hold to confirm, one confirm per deliberate pinch. While ATLAS is open the pinch belongs to
-    ATLAS; a pinch still held when ATLAS closes must be released before it can confirm anything."""
+    ATLAS; a pinch still held when ATLAS closes must be released before it can confirm anything. A pinch whose
+    hand changed size a lot while held (LENS 'reaching': moving to or from the camera, e.g. grabbing a tool) is
+    dropped and must be released before it can confirm."""
 
     def __init__(self):
         self.start, self.fired, self.cooldown_until = None, False, 0.0
 
-    def step(self, app, pinching: bool, now: float) -> float:
+    def step(self, app, pinching: bool, now: float, reaching: bool = False) -> float:
         if app.atlas_open():
             self.start, self.fired = None, pinching
+            return 0.0
+        if pinching and reaching and not self.fired:
+            self.start, self.fired = None, True             # never confirm on a reach; release to try again
+            hud = getattr(app, "hud", None)
+            if hud is not None:
+                hud.flash("Pinch dropped: your hand moved toward or away from the camera. Release and pinch again.",
+                          AMBER)
             return 0.0
         if pinching and now >= self.cooldown_until and not self.fired:
             self.start = self.start or now
