@@ -139,6 +139,7 @@ class James:
         self.q: queue.Queue = queue.Queue()
         self.rec, self.asr = Recorder(), Transcriber()
         self.apps = LA.resolve(getattr(config, "GOOGLE_ACCOUNT", None))      # allowlist, resolved for this OS
+        self.apps += LA.internal_targets()                                    # JAMES's own apps (ATLAS)
         self.app_by_id = {a.id: a for a in self.apps}
         self.installed = LA.installed_apps()                   # any installed app can be opened by voice
         self.model_ok = llm.available(config.CHAT_MODEL)
@@ -175,6 +176,10 @@ class James:
         if prefs.get("talkback") is False:
             self.talker.set_muted(True)                 # the switch was off last time
         self.write(f"TALK engine: {self.talker.describe()}; talk-back {'off' if self.talker.muted else 'on'}")
+        self.atlas = None                           # the ATLAS app (atlas_app.AtlasViewer), loaded on first open
+        self.atlas_requested = False                # set by press(); the main loop opens it at the next frame
+        self.cantus = None                          # the CANTUS rhythm game (cantus.CantusApp), loaded on first open
+        self.cantus_requested = False
         self.fix_pos = 0                            # the fix step JAMES read out last (for "next step")
         self.ctx: dict = {}                         # what the last commands did, so the next one can refer to it:
                                                     # app (name), search (site, query, top), chat, contact
@@ -266,12 +271,163 @@ class James:
             app = self.app_by_id.get(key[4:])
             if app is None:                                  # allowlist: only resolved targets can open
                 self.flash("That is not on the allowed list", RED); return
+            if app.how == "internal":                        # a JAMES app: opens in this window, on the main loop
+                if app.id == "cantus":
+                    self.cantus_requested = True
+                else:
+                    self.atlas_requested = True
+                self.flash(f"Opening {app.label}", GREEN)
+                self.write(f"OPEN {app.id} internal")
+                return
             LA.open_target(app)
             if app.how == "app":
                 self.ctx["app"] = app.label
             self.flash(f"Opening {app.label}", GREEN)
             self.event(f"{app.label} opened")
             self.write(f"OPEN {app.id} {app.how} {app.where}")
+
+    # ---------- ATLAS (an app inside JAMES) ----------
+    def atlas_on(self) -> bool:
+        return self.atlas is not None and self.atlas.active
+
+    def open_atlas(self, now: float | None = None) -> bool:
+        """Open the ATLAS app full screen. Refused while locked or while a task owns the screen."""
+        self.atlas_requested = False
+        if self.s.locked:
+            self.flash("Locked. Press U to unlock.", RED)
+            return False
+        if self.busy or getattr(self, "_planning", False):  # a plan still being worked out would run out of sight
+            self.flash("Finish or cancel the current task first (Esc cancels).", AMBER)
+            return False
+        if self.cantus_on():
+            self.close_cantus("switched to ATLAS")
+        if self.launcher:
+            self.close_launcher()
+        if self.rec.active:
+            self.stop_listen(run=False)
+        try:
+            if self.atlas is None:
+                from atlas_app import AtlasViewer
+                self.atlas = AtlasViewer()
+            self.atlas.open(now)
+        except Exception as e:  # noqa: BLE001  a broken library must not take JAMES down
+            self.flash(f"ATLAS could not open: {e}", RED, 6)
+            self.write(f"ATLAS_ERROR {e}")
+            return False
+        self.event("ATLAS opened")
+        self.write(f"ATLAS open ({len(self.atlas.models)} models)")
+        if self.atlas.problems:
+            self.write("ATLAS left out: " + "; ".join(self.atlas.problems))
+        return True
+
+    def close_atlas(self, why: str = "closed"):
+        if self.atlas_on():
+            self.atlas.close()
+        self.palm_block_until = time.monotonic() + PALM_BLOCK_S     # the hand that closed it doesn't open the launcher
+        self.event("ATLAS closed")
+        self.write(f"ATLAS {why}")
+
+    def atlas_frame(self, frame, view, now: float, lens=None):
+        """One camera frame while ATLAS is open: hands go to ATLAS, the screen is ATLAS."""
+        if lens is not None:
+            self.set_owner(view.owner, getattr(lens.owner, "epoch", None))
+        self.atlas.update(view, now)
+        if not self.atlas.active:                       # Close was pinched on the shelf
+            self.close_atlas("closed by pinch")
+            return frame
+        return self.atlas.render(frame, view, now)
+
+    def atlas_key(self, k: int, lens=None, now: float | None = None) -> str | None:
+        """One key while ATLAS is open. Returns "quit" for Q."""
+        c = chr(k).lower()
+        if c == "q":
+            return "quit"
+        if k == 27:
+            self.close_atlas("closed by Esc")
+        elif c == "u":
+            self.close_atlas("closed by lock")
+            self.s.locked = True
+            self.event("Locked")
+        elif c == "x" and lens is not None and getattr(lens.owner, "kind", "") == "key":
+            off = lens.toggle_pause()
+            self.atlas.flash("Owner key off: any hand drives JAMES. X turns it back on." if off else
+                             "Owner key on: only the hand wearing the key drives JAMES.", now, 4)
+            self.write(f"OWNER key {'paused' if off else 'required'} (in ATLAS)")
+        else:
+            self.atlas.key("tab" if k == 9 else c, now)
+        return None
+
+    # ---------- CANTUS (the rhythm game, an app inside JAMES) ----------
+    def cantus_on(self) -> bool:
+        return self.cantus is not None and self.cantus.active
+
+    def inner_on(self) -> bool:
+        """An app inside JAMES (ATLAS or CANTUS) owns the window."""
+        return self.atlas_on() or self.cantus_on()
+
+    def open_cantus(self, now: float | None = None) -> bool:
+        """Open CANTUS full screen. Same rules as ATLAS: not while locked, not over a task."""
+        self.cantus_requested = False
+        if self.s.locked:
+            self.flash("Locked. Press U to unlock.", RED)
+            return False
+        if self.busy or getattr(self, "_planning", False):
+            self.flash("Finish or cancel the current task first (Esc cancels).", AMBER)
+            return False
+        if self.atlas_on():
+            self.close_atlas("switched to CANTUS")
+        if self.launcher:
+            self.close_launcher()
+        if self.rec.active:
+            self.stop_listen(run=False)
+        self.talker.stop()                                # the game has the speakers now
+        try:
+            if self.cantus is None:
+                from cantus import CantusApp
+                self.cantus = CantusApp()
+            self.cantus.open(now)
+        except Exception as e:  # noqa: BLE001  a broken song folder must not take JAMES down
+            self.flash(f"CANTUS could not open: {e}", RED, 6)
+            self.write(f"CANTUS_ERROR {e}")
+            return False
+        self.event("CANTUS opened")
+        self.write(f"CANTUS open ({len(self.cantus.lib.entries)} songs)")
+        return True
+
+    def close_cantus(self, why: str = "closed"):
+        if self.cantus_on():
+            self.cantus.close()
+        self.palm_block_until = time.monotonic() + PALM_BLOCK_S
+        self.event("CANTUS closed")
+        self.write(f"CANTUS {why}")
+
+    def cantus_frame(self, frame, view, now: float, lens=None):
+        if lens is not None:
+            self.set_owner(view.owner, getattr(lens.owner, "epoch", None))
+        self.cantus.update(view, now)
+        if not self.cantus.active:
+            self.close_cantus("closed by pinch")
+            return frame
+        return self.cantus.render(frame, view, now)
+
+    def cantus_key(self, k: int, lens=None, now: float | None = None) -> str | None:
+        c = chr(k).lower()
+        if c == "q":
+            return "quit"
+        if c == "u":
+            self.close_cantus("closed by lock")
+            self.s.locked = True
+            self.event("Locked")
+            return None
+        if c == "x" and lens is not None and getattr(lens.owner, "kind", "") == "key":
+            off = lens.toggle_pause()
+            self.cantus.flash("Owner key off: any hand plays. X turns it back on." if off else
+                              "Owner key on: only the hand wearing the key drives the menus.", now, 4)
+            return None
+        self.cantus.key({27: "esc", 13: "enter", 10: "enter", 32: " "}.get(k, c), now)
+        if not self.cantus.active:
+            self.close_cantus("closed by Esc")
+        return None
 
     def identify(self, frame=None):
         """Start a 5-second countdown with a square on screen. Pressing again snaps immediately."""
@@ -490,6 +646,7 @@ class James:
             i = self.voice_step("Working out the steps", detail=f"local model ({why})")
             self.speak(f"One moment{', ' + self.sir if self.sir else ''}.")
             self.write(f"ROUTE model ({why})")
+            self._planning = True                                  # ATLAS waits until this plan has run
             threading.Thread(target=self._model_plan, args=(i, txt, steps), daemon=True).start()
             return
         departed, self._departed = getattr(self, "_departed", False), False
@@ -990,7 +1147,7 @@ class James:
         hit = next((a for a in self.apps if q and (q == LA._norm(a.label) or q == a.id)), None)
         if hit:
             self.press(f"app:{hit.id}")
-            return True, f"{hit.label} opened"
+            return True, (f"opening {hit.label}" if hit.how == "internal" else f"{hit.label} opened")
         found = LA.find_app(spoken, self.installed)
         if found is None:                                      # maybe installed since start-up: rescan once
             self.installed = LA.installed_apps()
@@ -1631,6 +1788,7 @@ class James:
                 self.speak(T.identified(str(r.get("object") or "object"), str(r.get("problem") or ""), self.s.problems,
                                         self.s.model_text), interrupt=True)
             elif kind == "model_plan":
+                self._planning = False
                 i, steps, how, secs, said, heard = a
                 if self.stale_owner():
                     self.write(f"IGNORED model plan for {heard!r}: another hand has control now")
@@ -1959,6 +2117,7 @@ def main():
     else:
         print("  owner      : off, the largest hand drives")
     prev_owner = None
+    atlas_was_on = False
     j.speak(T.greeting(j.sir))
     print(f"  talkback   : {j.talker.describe()}; {'off' if j.talker.muted else 'on'} (switch at the top, or M)")
     tm = j.timer
@@ -1968,6 +2127,7 @@ def main():
             ok, raw = cap.read()
             if not ok:
                 break
+            t_cap = time.monotonic()                      # when the hands were where LENS will say they are
             tm.mark("capture")
             r = lens.process(raw, int((time.monotonic() - t0) * 1000))
             tm.mark("perception")
@@ -1978,8 +2138,38 @@ def main():
             if config.MIRROR:
                 frame, view = cv2.flip(raw, 1), mirror_result(r, raw.shape[1])
             tip = view.fingertip
+            # while pinching, choose what the finger aimed at just before the pinch (closing the fingers drags it)
+            aim = view.pinch_point if (view.pinching and getattr(view, "pinch_point", None)) else tip
             now = time.monotonic()
             W, H = frame.shape[1], frame.shape[0]
+            if j.atlas_requested:
+                j.open_atlas(now)
+            if j.cantus_requested:
+                j.open_cantus(now)
+            if atlas_was_on and not j.inner_on():          # just closed: no gesture timer carries over from before
+                pinch_start, fired, palm_since = None, bool(view.pinching), None
+                g.update({k_: None for k_ in g})
+            atlas_was_on = j.inner_on()
+            if j.cantus_on():                              # CANTUS owns the window too
+                out = j.cantus_frame(frame, view, t_cap, lens)
+                tm.mark("render")
+                cv2.imshow("JAMES", out)
+                k = cv2.waitKey(1) & 0xFF
+                tm.mark("display")
+                tm.end()
+                if k != 255 and j.cantus_key(k, lens, now) == "quit":
+                    break
+                continue
+            if j.atlas_on():                               # ATLAS owns the window: no launcher, no voice gestures
+                out = j.atlas_frame(frame, view, now, lens)
+                tm.mark("render")
+                cv2.imshow("JAMES", out)
+                k = cv2.waitKey(1) & 0xFF
+                tm.mark("display")
+                tm.end()
+                if k != 255 and j.atlas_key(k, lens, now) == "quit":
+                    break
+                continue
             # open palm -> launcher, ONLY when idle (no task, not locked, not just after a choice); time-based hold
             palm_ok = view.open_palm and j.palm_allowed(now)
             if palm_ok:
@@ -2005,13 +2195,13 @@ def main():
                     j.close_launcher()
                     hover = None
                 else:
-                    hover = j.launcher_hit(tip)
+                    hover = j.launcher_hit(aim)
                     if hover:
                         j.launcher["last_hover"] = time.time()
                     elif time.time() - j.launcher["last_hover"] > LAUNCHER_IDLE_S:
                         j.close_launcher()
             else:
-                hover = next((b.key for b in j._dock if b.hit(tip)), None)
+                hover = next((b.key for b in j._dock if b.hit(aim)), None)
             progress = 0.0
             if view.pinching and hover and now >= cool and not fired:
                 pinch_start = pinch_start or now
@@ -2111,6 +2301,8 @@ def main():
                 elif j.busy:
                     j.end_task("Task cancelled")
     finally:
+        if j.cantus is not None:                          # never leave a song playing (or a paused player) behind
+            j.cantus.close()
         lens.close(); cap.release(); cv2.destroyAllWindows()
         if eyes is not None:
             eyes.close()

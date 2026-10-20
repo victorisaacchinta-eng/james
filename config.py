@@ -46,6 +46,37 @@ if OWNER_KEY_ID in ASSET_TAGS:
 POINT_STABLE_MS = 530            # the finger must stay on a tag this long before it counts (time, not frames:
                                  # 8 frames was 530 ms at 15 FPS but 800 ms at 10 FPS)
 PINCH_RATIO = 0.33               # thumb-index gap / palm size below this = pinch (tune with gloves)
+# Motion (james_core/motion.py). 1-euro smoothing of the hand landmarks: lower SMOOTH_MIN_CUTOFF = steadier
+# when still; higher SMOOTH_BETA = less lag on fast moves. A pinch selects where the finger aimed this long
+# before the pinch began (closing the fingers drags the tip off target).
+SMOOTHING = True
+SMOOTH_MIN_CUTOFF = 1.0
+SMOOTH_BETA = 0.01
+PINCH_AIM_LOOKBACK_MS = 120
+# ATLAS exploded view (X in app.py). REDUCED_MOTION: no animation, every change is instant.
+REDUCED_MOTION = False
+ATLAS_IDLE_SWAY = True           # a slow +/-9 degree sway when no hand is in view, so the 3D reads; off = still
+# ATLAS hands (atlas_gestures.py, james_core/handpose.py). Openness per finger = tip-to-wrist / knuckle-to-wrist.
+ATLAS_FIST_RATIO = 1.05          # a finger at or below this counts as fully closed
+ATLAS_OPEN_RATIO = 1.75          # ... at or above this, fully open
+ATLAS_EXPLODE_FROM = 0.12        # hand openness where the explode starts (below: assembled)
+ATLAS_EXPLODE_TO = 0.85          # ... and where it is complete
+ATLAS_TURN_DEG_PER_PX = 0.28     # moving an open hand: degrees of turn per pixel
+ATLAS_TWIST_GAIN = 1.0           # twisting the hand: degrees of roll per degree of twist
+ATLAS_START_PX = 6.0             # a resting hand must move this far before it turns anything (jitter guard)
+ATLAS_START_DEG = 4.0            # ... or twist this far before it rolls anything
+ATLAS_PEACE_HOLD_S = 0.5         # hold the V sign this long for the next model
+ATLAS_MAX_FPS = 30               # the ATLAS app never draws faster than this (the camera gives about 30 anyway)
+ATLAS_IDLE_AFTER_S = 3.0         # no hand for this long: look for one on every 3rd frame only (less heat)
+ATLAS_FRAME_BUDGET_MS = 14.0     # if a full drawing takes longer, draw fewer lines while the view moves
+ATLAS_TWO_ENTER_S = 0.2          # the second hand must be in view this long before two-hand zoom starts
+# CANTUS rhythm game (cantus.py). Your songs go in data/cantus/songs (never committed).
+CANTUS_DIFFICULTY = "normal"     # easy | normal | hard (D changes it in the game)
+CANTUS_AUDIO_OFFSET_MS = 80      # music vs blocks; [ and ] adjust it live. Raise it if blocks arrive before the beat
+CANTUS_SWING_PX_S = 420          # a swing is at least this fast (at 1280 px wide)...
+CANTUS_SWING_PALMS_S = 4.0       # ...and at least this many palm widths a second
+CANTUS_PAUSE_HOLD_S = 0.8        # hold the peace sign this long to pause
+CANTUS_NO_FAIL = True            # True: running out of energy never ends the song
 
 # Sample data (clearly labelled as sample everywhere it shows)
 MANUAL = PACK.manual_path()             # packs/<pack>/docs/...

@@ -1,0 +1,204 @@
+# ATLAS library recipes: which openly licensed 3D models JAMES ships, where they come from, and how their
+# meshes are grouped into the parts you can pick. Rebuild with:  python -m tools.atlas_import
+# (dev only: needs tools/requirements-atlas.txt). The app itself only reads atlas_library/.
+#
+# Licences were checked at the source on 2026-10-05:
+#  - NASA 3D Resources: "free and without copyright" (github.com/nasa/NASA-3D-Resources README). NASA does not
+#    endorse JAMES; no NASA insignia is used.
+#  - Khronos glTF Sample Assets: per-model metadata.json. CC-BY-4.0 models need attribution (shown on screen and
+#    in atlas_library/NOTICE.md) and a note that they were changed (converted to a line drawing; textures, logos
+#    and materials dropped).
+#
+# groups: first matching regex (on the node name) wins. Nodes that match nothing join the nearest group.
+# explode: travel in model units (the model is scaled so its longest side is 1.0). y is up.
+
+models:
+  - id: perseverance
+    label: Mars 2020 Perseverance rover
+    kind: NASA rover
+    url: "https://raw.githubusercontent.com/nasa/NASA-3D-Resources/master/3D%20Models/Mars%202020%20Perseverance%20Rover/Mars%202020%20Perseverance%20Rover.glb"
+    file: perseverance.glb
+    licence: Public domain (NASA, no copyright)
+    credit: "Model: NASA/JPL-Caltech, NASA 3D Resources"
+    budget: 15000
+    groups:
+      - {id: wheels, label: Wheels, match: ["^Wheels"], explode: [0, -0.12, 0],
+         role: "Six aluminium wheels, 52.5 cm across, with cleats for grip and curved titanium spokes for spring."}
+      - {id: suspension, label: Rocker-bogie, match: ["^suspension"], explode: [0, -0.06, 0],
+         role: "Differential, rockers and bogies: lets the rover drive over rocks about as tall as a wheel (52.5 cm)."}
+      - {id: arm, label: Robotic arm, match: ["^arm"], explode: [0, 0.02, 0.32],
+         role: "2.1 m arm with five joints: shoulder azimuth, shoulder elevation, elbow, wrist and turret."}
+      - {id: turret, label: Arm turret, match: ["^turret", "^PIXL", "^WATSON", "^corring_drill", "^probe"], explode: [0, 0.02, 0.5],
+         role: "The arm's hand: the coring drill, PIXL, SHERLOC with its WATSON camera, and a dust removal tool."}
+      - {id: mast, label: Mast head, match: ["^head", "^Mastcam", "^NavCams", "^lens", "^pan_end", "^microphones"], explode: [0, 0.34, 0.06],
+         role: "Remote-sensing mast: SuperCam's laser and spectrometers, the Mastcam-Z zoom cameras and the Navcams."}
+      - {id: hazcams, label: Hazcams, match: ["^hazcams"], explode: [0, -0.02, 0.2],
+         role: "Hazard avoidance cameras, four front and two rear, giving 3D views for autonomous driving."}
+      - {id: rtg, label: MMRTG power, match: ["^rtg"], explode: [0, 0.06, -0.34],
+         role: "Radioisotope power: heat from decaying plutonium dioxide becomes about 110 W of electricity."}
+      - {id: hga, label: High-gain antenna, match: ["^antenna_hg"], explode: [0.26, 0.18, -0.08],
+         role: "Hexagonal X-band panel, about 30 cm across, that talks straight to Earth."}
+      - {id: uhf, label: UHF and low-gain antennas, match: ["^antenna_uhf", "^antenna_lg"], explode: [-0.24, 0.18, -0.1],
+         role: "UHF relays data through Mars orbiters at up to 2 Mbit/s; the low-gain antenna is the backup link."}
+      - {id: edl_cams, label: Landing cameras, match: ["Look_Camera"], explode: [0, 0.22, 0.12],
+         role: "Entry, descent and landing cameras that filmed the rover's arrival from above and below."}
+      - {id: rimfax, label: RIMFAX radar, match: ["^RIMFAX"], explode: [0, -0.2, -0.28],
+         role: "Ground-penetrating radar that maps rock and ice layers under the rover as it drives."}
+      - {id: sampling, label: Sample handling, match: ["^lab", "^calibration_target", "^Name_Chips"], explode: [0, 0.12, 0.24],
+         role: "Labelled 'lab' in NASA's model. On Perseverance this front bay holds the Sample Caching System."}
+      - {id: body, label: Body (chassis), match: ["^Body", "^top", "^bottom", "^base", "^box", "^part_", "^cover", "^hinge", "^Cylinder"], explode: [0, 0, 0],
+         role: "The warm electronics box: computers, batteries and the sample tubes live inside it."}
+
+  - id: ingenuity
+    label: Ingenuity Mars helicopter
+    kind: NASA aircraft
+    url: "https://raw.githubusercontent.com/nasa/NASA-3D-Resources/master/3D%20Models/Ingenuity%20Mars%20Helicopter/Ingenuity%20Mars%20Helicopter.glb"
+    file: ingenuity.glb
+    licence: Public domain (NASA, no copyright)
+    credit: "Model: NASA/JPL-Caltech, NASA 3D Resources"
+    budget: 14000
+    groups:
+      - {id: solar, label: Solar panel, match: ["^solar_panel"], explode: [0, 0.42, 0],
+         role: "Solar array on top of the rotor system; it charges six lithium-ion batteries."}
+      - {id: upper_rotor, label: Upper rotor, match: ["^rotors_01", "^parts_01"], explode: [0, 0.26, 0],
+         role: "One of two counter-rotating 1.2 m carbon-fibre rotors, spinning at about 2,400 rpm."}
+      - {id: lower_rotor, label: Lower rotor, match: ["^rotors_02", "^parts_02"], explode: [0, 0.1, 0],
+         role: "Turns the opposite way to the upper rotor, so the helicopter does not spin around."}
+      - {id: fuselage, label: Fuselage, match: ["^bus"], explode: [0, -0.06, 0],
+         role: "The body: avionics, batteries and heaters that keep them alive through the Martian night."}
+      - {id: cameras, label: Cameras, match: ["^cams"], explode: [0.3, -0.12, 0],
+         role: "A colour camera for terrain pictures and a black-and-white camera for navigation."}
+      - {id: leg_1, label: Leg 1, match: ["^leg_01"], explode: [-0.16, -0.16, 0.16],
+         role: "One of four carbon composite landing legs, each 0.384 m long."}
+      - {id: leg_2, label: Leg 2, match: ["^leg_02"], explode: [-0.16, -0.16, -0.16],
+         role: "One of four carbon composite landing legs, each 0.384 m long."}
+      - {id: leg_3, label: Leg 3, match: ["^leg_03"], explode: [0.16, -0.16, 0.16],
+         role: "One of four carbon composite landing legs, each 0.384 m long."}
+      - {id: leg_4, label: Leg 4, match: ["^leg_04"], explode: [0.16, -0.16, -0.16],
+         role: "One of four carbon composite landing legs, each 0.384 m long."}
+
+  - id: jwst
+    label: James Webb Space Telescope
+    kind: NASA observatory
+    url: "https://raw.githubusercontent.com/nasa/NASA-3D-Resources/master/3D%20Models/James%20Webb%20Space%20Telescope%20(A)/James%20Webb%20Space%20Telescope%20(A).glb"
+    file: jwst.glb
+    licence: Public domain (NASA, no copyright)
+    credit: "Model: NASA, NASA 3D Resources"
+    budget: 15000
+    strip_prefix: "James_Webb_Space_Telescope:"
+    groups:
+      - {id: mirrors, label: Mirrors, match: ["mirror", "^ss", "^st_", "^stray", "^bafl"], explode: [0, 0.3, 0.12],
+         role: "The gold-coated primary mirror of 18 hexagonal segments, and the secondary mirror on its struts."}
+      - {id: sunshield, label: Sunshield layers, match: ["^poly", "^polySurface"], explode: [0, -0.04, 0],
+         role: "Five tennis-court-sized layers that keep the telescope side cold enough to see in infrared."}
+      - {id: booms, label: Mid booms, match: ["^mboom"], explode: [0, -0.02, 0.16],
+         role: "Telescoping booms that pulled the sunshield layers out to full size after launch."}
+      - {id: bus, label: Spacecraft bus, match: ["^bus", "^sc_", "^battery", "^cryocooler", "^deprad", "^radhrnss"], explode: [0, -0.22, 0],
+         role: "Power, pointing, communications and propulsion for the observatory, on the warm side of the shield."}
+      - {id: solar, label: Solar array, match: ["^sa_", "^slrpnl"], explode: [0, -0.26, -0.22],
+         role: "Turns sunlight into power for the whole observatory."}
+      - {id: hga, label: High-gain antenna, match: ["^hga", "^omni"], explode: [0.1, -0.3, 0.1],
+         role: "Dish that sends the science data to Earth; the small omni antennas are the backup."}
+      - {id: thrusters, label: Thrusters, match: ["^prop", "^thrst", "^dthrst"], explode: [-0.12, -0.24, 0],
+         role: "Small rockets that keep Webb in its orbit around the Sun-Earth L2 point."}
+      - {id: flap, label: Momentum flap, match: ["^aft_flap", "^flap", "^aft"], explode: [0, 0, -0.22],
+         role: "A trim tab at the back of the shield that balances the push of sunlight."}
+      - {id: wiring, label: Harnesses, match: ["^harness", "^iec"], explode: [0, 0.12, -0.08],
+         role: "Cables and the instrument electronics compartment that link the cold and warm sides."}
+      - {id: structure, label: Structure and covers, match: ["^asm", "^fwd", "^mid", "^supp", "^ring", "^rin", "^side", "^top", "^bot", "^arm", "^bpod", "^twr", "^wing", "^spread", "^f_", "^a_", "^delta", "^base"], explode: [0, 0.08, 0],
+         role: "Supports, cover cleats and the tower that holds the telescope above the sunshield."}
+
+  - id: car_concept
+    label: Concept car
+    kind: Car
+    url: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/CarConcept/glTF-Binary/CarConcept.glb"
+    file: car_concept.glb
+    licence: CC-BY-4.0
+    credit: "Model: Eric Chadwick, (c) 2024 Darmstadt Graphics Group GmbH, CC BY 4.0. Converted to a line drawing."
+    budget: 15000
+    groups:
+      - {id: wheel_fl, label: Front left wheel, match: ["^WheelFrontL"], explode: [0.34, -0.04, 0.14],
+         role: "Rim, tyre, brake disc and caliper pad of the front left corner."}
+      - {id: wheel_fr, label: Front right wheel, match: ["^WheelFrontR"], explode: [-0.34, -0.04, 0.14],
+         role: "Rim, tyre, brake disc and caliper pad of the front right corner."}
+      - {id: wheel_rl, label: Rear left wheel, match: ["^WheelRearL"], explode: [0.34, -0.04, -0.14],
+         role: "Rim, tyre, brake disc and caliper pad of the rear left corner."}
+      - {id: wheel_rr, label: Rear right wheel, match: ["^WheelRearR"], explode: [-0.34, -0.04, -0.14],
+         role: "Rim, tyre, brake disc and caliper pad of the rear right corner."}
+      - {id: axles, label: Axles, match: ["^Axles"], explode: [0, -0.16, 0],
+         role: "Carry the wheels and pass the drive to them."}
+      - {id: door_l, label: Left door, match: ["^BodyDoorL", "^InteriorDoorL"], explode: [0.42, 0.06, 0],
+         role: "Door shell, window, gasket, mirror, handle and inner trim."}
+      - {id: door_r, label: Right door, match: ["^BodyDoorR", "^InteriorDoorR"], explode: [-0.42, 0.06, 0],
+         role: "Door shell, window, gasket, mirror, handle and inner trim."}
+      - {id: hood, label: Hood, match: ["^BodyHood"], explode: [0, 0.3, 0.2],
+         role: "Bonnet panel with its grille and inner structure."}
+      - {id: glass, label: Glass and wipers, match: ["^BodyWindshield", "^BodyRearwindow", "^BodyWindowsRearSides"], explode: [0, 0.4, 0],
+         role: "Windscreen with its gasket and wipers, rear window and rear side windows."}
+      - {id: lights, label: Lights, match: ["^BodyHeadlights", "^BodyTaillight"], explode: [0, 0.12, 0],
+         role: "Headlights and tail lights."}
+      - {id: body, label: Body shell, match: ["^Body"], explode: [0, 0.2, 0],
+         role: "Outer panels, roof, pillars and underside."}
+      - {id: cage, label: Roll cage, match: ["^InteriorCage", "^InteriorPillar"], explode: [0, 0.3, -0.02],
+         role: "Tubular frame that protects the cabin in a rollover."}
+      - {id: seats, label: Seats, match: ["^InteriorSeats"], explode: [0, 0.16, -0.04],
+         role: "Driver and passenger seats with their frames."}
+      - {id: cockpit, label: Steering and dash, match: ["^InteriorSteering", "^InteriorDash", "^InteriorPedal"], explode: [0, 0.1, 0.12],
+         role: "Steering wheel and column, dashboard and brake pedal."}
+      - {id: floor, label: Floor and cabin, match: ["^Interior"], explode: [0, -0.08, 0],
+         role: "Floor pan, floor mats, rear hatch and cabin panels."}
+
+  - id: chronograph
+    label: Chronograph watch
+    kind: Watch
+    url: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/ChronographWatch/glTF-Binary/ChronographWatch.glb"
+    file: chronograph.glb
+    licence: CC-BY-4.0
+    credit: "Model: Eric Chadwick, (c) 2025 Darmstadt Graphics Group GmbH, CC BY 4.0. Converted to a line drawing; logos not shown."
+    budget: 11000
+    groups:
+      - {id: glass, label: Crystal, match: ["^Glass"], explode: [0, 0, 0.5],
+         role: "The clear cover over the dial."}
+      - {id: seconds, label: Seconds hands, match: ["^Hand Seconds"], explode: [0, 0, 0.4],
+         role: "Seconds hands of the main dial and a sub-dial."}
+      - {id: minutes, label: Minute hands, match: ["^Hand Minutes"], explode: [0, 0, 0.32],
+         role: "Minute hands of the main dial and the sub-dials."}
+      - {id: hours, label: Hour hands, match: ["^Hand Hours", "^Hand Setting"], explode: [0, 0, 0.24],
+         role: "Hour hands and the small setting hand."}
+      - {id: dial, label: Dial, match: ["^Watch Face"], explode: [0, 0, 0.14],
+         role: "The face with its numerals and sub-dials."}
+      - {id: bezel, label: Bezel, match: ["^Bezel"], explode: [0, 0, 0.06],
+         role: "The ring that frames the crystal."}
+      - {id: case, label: Case and pushers, match: ["^Button Metal"], explode: [0, 0, 0],
+         role: "The metal case with the crown and the pushers."}
+      - {id: buttons, label: Pusher caps, match: ["^Button Plastic"], explode: [0.24, 0, 0],
+         role: "Plastic caps on the pushers."}
+      - {id: back, label: Case back, match: ["^Backplate"], explode: [0, 0, -0.24],
+         role: "Closes the case behind the movement."}
+      - {id: band, label: Strap, match: ["^Band"], explode: [0, 0, -0.1],
+         role: "Carbon-fibre and plastic strap."}
+      - {id: clasp, label: Buckle, match: ["^Clasp"], explode: [0, -0.1, -0.2],
+         role: "Fastens the strap."}
+
+  - id: flight_helmet
+    label: Flight helmet
+    kind: Equipment
+    url: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/FlightHelmet/glTF/FlightHelmet.gltf"
+    file: flight_helmet/FlightHelmet.gltf
+    extra_files: [FlightHelmet.bin]
+    licence: CC0-1.0
+    credit: "Model: glTF Sample Assets, conversion from Maya by Gary Hsu, CC0"
+    budget: 10000
+    groups:
+      - {id: lenses, label: Goggle lenses, match: ["^Lenses"], explode: [0, 0.1, 0.34],
+         role: "The two goggle lenses."}
+      - {id: glass_plastic, label: Goggle frames, match: ["^GlassPlastic"], explode: [0, 0.08, 0.22],
+         role: "Goggle frames and plastic fittings."}
+      - {id: metal, label: Metal fittings, match: ["^MetalParts"], explode: [0.24, 0, 0.1],
+         role: "Buckles, rivets and the metal fittings of the mask."}
+      - {id: leather, label: Leather shell, match: ["^LeatherParts"], explode: [0, 0.12, -0.1],
+         role: "The leather helmet and its straps."}
+      - {id: rubber_wood, label: Mask and stand, match: ["^RubberWood"], explode: [0, -0.02, 0.06],
+         role: "Rubber oxygen mask and the wooden display stand."}
+      - {id: hose, label: Oxygen hose, match: ["^Hose"], explode: [0, -0.14, 0.22],
+         role: "Corrugated hose that fed oxygen to the mask."}

@@ -23,6 +23,10 @@ data/contacts.json
 data/owner_ring.json
 data/runs.csv
 data/sim_frames/
+data/atlas_frames/
+data/atlas_src/
+data/cantus/
+data/cantus_frames/
 lab/data/
 
 # Private working notes (keep out of the public repo)

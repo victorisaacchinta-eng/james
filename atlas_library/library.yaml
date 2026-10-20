@@ -1,0 +1,47 @@
+# ATLAS library manifest. Written by tools/atlas_import.py; the app refuses any file whose
+# hash does not match. Credits and licences: NOTICE.md.
+format: james-atlas/0.1
+models:
+- id: perseverance
+  label: Mars 2020 Perseverance rover
+  licence: Public domain (NASA, no copyright)
+  credit: 'Model: NASA/JPL-Caltech, NASA 3D Resources'
+  files:
+    perseverance/model.yaml: e2c6cfa7b9954d290a4de44cc947775d5631ad28d3ff515f4b29d6ab6c330122
+    perseverance/edges.npz: f597bb14929ac8d213a936fb1c1cc8d24b8cf7da7324deb36cb6e261b5057986
+- id: ingenuity
+  label: Ingenuity Mars helicopter
+  licence: Public domain (NASA, no copyright)
+  credit: 'Model: NASA/JPL-Caltech, NASA 3D Resources'
+  files:
+    ingenuity/model.yaml: 80a6d396d85337c62be6aeb9002733376d9aee1e5342f84d6e4b961cd8b00b45
+    ingenuity/edges.npz: 9cca979eb476fac9d1f66200f19ae0b526809c2cd35d0bfdd2ed9ff9c60bf5da
+- id: jwst
+  label: James Webb Space Telescope
+  licence: Public domain (NASA, no copyright)
+  credit: 'Model: NASA, NASA 3D Resources'
+  files:
+    jwst/model.yaml: 9f82e1d4a5d44d9d74cee12e63d1c8298b0af23c069c52225ac4a4e18a2bebf6
+    jwst/edges.npz: cbeeaca2c8cdf40a16780c1959b4338ef4e216981c8048a018f7653d2f32c8ce
+- id: car_concept
+  label: Concept car
+  licence: CC-BY-4.0
+  credit: 'Model: Eric Chadwick, (c) 2024 Darmstadt Graphics Group GmbH, CC BY 4.0. Converted to a line drawing.'
+  files:
+    car_concept/model.yaml: 95cb8bcbe2f7eea539a702d08133d7bfb1aa6f20ce62e25038b676614f77288b
+    car_concept/edges.npz: f8e95d9c94db776cfa69f0c1c8ef9e2c16ab7d7f7d82c0eab6a4c9a01334e09c
+- id: chronograph
+  label: Chronograph watch
+  licence: CC-BY-4.0
+  credit: 'Model: Eric Chadwick, (c) 2025 Darmstadt Graphics Group GmbH, CC BY 4.0. Converted to a line drawing; logos not
+    shown.'
+  files:
+    chronograph/model.yaml: f52b328e8aca6ed08aab1f68890f32d6e2ce10aa8ba9fa670bc405b1faf7ecaf
+    chronograph/edges.npz: f903f9b8e8c7a725ea4bbbf249fb35ae8dd3eb786726c4916a82aaab04c103d5
+- id: flight_helmet
+  label: Flight helmet
+  licence: CC0-1.0
+  credit: 'Model: glTF Sample Assets, conversion from Maya by Gary Hsu, CC0'
+  files:
+    flight_helmet/model.yaml: 8211e548a69525dfa3316678dd59d4a4571746d63a96e07aad20e3d7c6a6bbf5
+    flight_helmet/edges.npz: 82b923e808c554408999f796db28a4ad85306d2c40c64e2e70b33b57185d5227

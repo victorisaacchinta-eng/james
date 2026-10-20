@@ -1,0 +1,141 @@
+# ATLAS model: end-suction centrifugal pump, motor-coupled, on a baseplate. Format: james-model/0.1.
+# DEMO MODEL. A schematic drawn by the JAMES team from a generic pump layout, sized to look right, not
+# measured from any real machine. Not OEM CAD. Shown on the HUD as SCHEMATIC.
+#
+# Axes, millimetres: x along the shaft (motor at -x, suction at +x), y up, z toward the viewer.
+# hazard: the WARDEN hazard tag this part carries (must exist in rules/pump_util_v0_1.yaml).
+# keywords: words in a manual step that point at this part (longest match wins).
+# explode: where the part travels in the exploded view.
+format: james-model/0.1
+class: centrifugal_pump
+label: Centrifugal pump
+source: JAMES demo team, schematic of a generic end-suction pump (not OEM CAD)
+units: mm
+
+parts:
+  - id: motor
+    label: Motor
+    role: Drives the pump shaft through the coupling. Isolate it at the breaker before any work.
+    hazard: electrical
+    keywords: [motor]
+    explode: [-320, 0, 0]
+    shapes:
+      - {kind: cylinder, at: [-440, 0, 0], radius: 128, length: 400, rings: 4, lines: 14, segments: 36}
+      - {kind: box, at: [-440, -176, 0], size: [300, 98, 230]}
+
+  - id: fan_cover
+    label: Fan cover
+    role: Guards the motor's cooling fan at the non-drive end.
+    keywords: [fan cover, cooling fan]
+    explode: [-470, 0, 0]
+    shapes:
+      - {kind: cylinder, at: [-680, 0, 0], radius: 120, radius2: 70, length: 80, rings: 3, lines: 16, segments: 32}
+
+  - id: terminal_box
+    label: Terminal box
+    role: Where the motor leads connect. Live until lockout is applied.
+    hazard: electrical
+    keywords: [terminal box, motor leads]
+    explode: [-320, 170, 0]
+    shapes:
+      - {kind: box, at: [-440, 165, 0], size: [130, 74, 120]}
+
+  - id: coupling
+    label: Coupling
+    role: Joins the motor shaft to the pump shaft. Misalignment here shows up as vibration.
+    hazard: rotating_parts
+    keywords: [coupling, alignment]
+    explode: [-150, 0, 0]
+    shapes:
+      - {kind: cylinder, at: [-200, 0, 0], radius: 54, length: 36, rings: 2, lines: 10, segments: 24}
+      - {kind: cylinder, at: [-155, 0, 0], radius: 54, length: 36, rings: 2, lines: 10, segments: 24}
+
+  - id: coupling_guard
+    label: Coupling guard
+    role: Fixed guard over the spinning coupling. Comes off only after lockout and zero energy.
+    hazard: coupling_guard
+    keywords: [coupling guard]
+    explode: [-150, 270, 0]
+    shapes:
+      - {kind: cylinder, at: [-178, 0, 0], radius: 88, length: 170, rings: 4, lines: 18, segments: 32}
+
+  - id: bearing_housing
+    label: Bearing housing
+    role: Holds the shaft bearings. Heat, noise or grease leakage here points to bearing wear.
+    hazard: bearing_housing
+    keywords: [bearing housing, bearing, bearings, grease]
+    explode: [-40, -10, 0]
+    shapes:
+      - {kind: cylinder, at: [20, 0, 0], radius: 78, length: 230, rings: 4, lines: 12, segments: 32}
+      - {kind: box, at: [20, -151, 0], size: [180, 148, 150]}
+
+  - id: shaft
+    label: Shaft
+    role: Carries the impeller. Rotates whenever the motor runs.
+    hazard: rotating_parts
+    keywords: [shaft]
+    explode: [60, 0, 0]
+    shapes:
+      - {kind: cylinder, at: [90, 0, 0], radius: 17, length: 640, rings: 3, lines: 4, segments: 14}
+
+  - id: seal
+    label: Mechanical seal
+    role: Stops the pumped liquid leaking along the shaft where it enters the casing.
+    keywords: [mechanical seal, seal, leakage at the shaft]
+    explode: [150, 150, 0]
+    shapes:
+      - {kind: cylinder, at: [190, 0, 0], radius: 44, length: 40, rings: 3, lines: 10, segments: 24}
+
+  - id: casing
+    label: Casing (volute)
+    role: Collects the liquid from the impeller and sends it up the discharge nozzle.
+    hazard: casing
+    keywords: [casing, volute, discharge nozzle]
+    explode: [200, 0, 0]
+    shapes:
+      - {kind: cylinder, at: [300, 0, 0], radius: 190, length: 124, rings: 3, lines: 16, segments: 44}
+      - {kind: cylinder, at: [300, 245, 0], axis: y, radius: 48, length: 120, rings: 3, lines: 8, segments: 24}
+      - {kind: box, at: [300, -207, 0], size: [150, 36, 210]}
+
+  - id: impeller
+    label: Impeller
+    role: The spinning vanes that move the liquid. Cavitation pits its leading edges.
+    hazard: rotating_parts
+    keywords: [impeller]
+    explode: [470, 0, 0]
+    shapes:
+      - {kind: impeller, at: [300, 0, 0], radius: 150, length: 42, vanes: 7, segments: 36}
+
+  - id: suction_nozzle
+    label: Suction nozzle
+    role: Where the liquid enters the pump, straight onto the impeller eye.
+    keywords: [suction nozzle, suction flange]
+    explode: [560, 0, 0]
+    shapes:
+      - {kind: cylinder, at: [425, 0, 0], radius: 62, radius2: 52, length: 126, rings: 3, lines: 10, segments: 28}
+
+  - id: suction_valve
+    label: Suction valve
+    role: Isolation valve on the suction line. Must be fully open while running, or the pump cavitates.
+    keywords: [suction valve]
+    explode: [610, 0, 0]
+    shapes:
+      - {kind: box, at: [560, 0, 0], size: [104, 112, 112]}
+      - {kind: cylinder, at: [560, 70, 0], axis: y, radius: 26, length: 70, rings: 2, lines: 4, segments: 12}
+      - {kind: cylinder, at: [560, 112, 0], axis: y, radius: 58, length: 6, rings: 2, lines: 0, segments: 28}
+
+  - id: strainer
+    label: Suction strainer
+    role: Catches debris before the pump. A high pressure drop across it starves the pump.
+    keywords: [strainer]
+    explode: [680, 0, 0]
+    shapes:
+      - {kind: cylinder, at: [690, 0, 0], radius: 58, length: 150, rings: 5, lines: 20, segments: 28}
+
+  - id: baseplate
+    label: Baseplate
+    role: Common frame that holds motor and pump in line. Loose bolts here throw out alignment.
+    keywords: [baseplate, foundation bolts, hold-down bolts]
+    explode: [0, -150, 0]
+    shapes:
+      - {kind: box, at: [-60, -243, 0], size: [1360, 36, 380]}

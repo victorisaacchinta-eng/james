@@ -157,8 +157,17 @@ def resolve(google_account: str | None = None, platform: str = sys.platform) -> 
     return out
 
 
+def internal_targets() -> list[Resolved]:
+    """Apps that live inside JAMES itself (no OS app, no website). press() opens them in the JAMES window;
+    open_target() never sees them."""
+    return [Resolved("atlas", "ATLAS", "internal", "atlas", _load_icon(ICONS / "internal_atlas.png")),
+            Resolved("cantus", "CANTUS", "internal", "cantus", _load_icon(ICONS / "internal_cantus.png"))]
+
+
 def open_target(r: Resolved) -> None:
     """Open one resolved target. Only ever called with an entry from resolve()."""
+    if r.how == "internal":
+        raise ValueError(f"{r.id} is a JAMES app; James.press opens it")
     if sys.platform == "darwin":
         subprocess.Popen(["open", "-a", r.where] if r.how == "app" else ["open", r.where])
     elif os.name == "nt":

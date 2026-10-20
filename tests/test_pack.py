@@ -39,9 +39,9 @@ def refused(d, *needles):
 
 def test_demo_pack_loads_and_is_labelled_demo():
     p = load_pack(SRC)
-    assert (p.id, p.version, p.status, p.signed) == ("pharma-utility", "0.1.1", "demo", False)
+    assert (p.id, p.version, p.status, p.signed) == ("pharma-utility", "0.1.2", "demo", False)
     assert p.asset_tags() == {4: "P-3"} and p.class_of("P-3") == "centrifugal_pump"
-    assert p.hud_label == "pharma-utility 0.1.1 DEMO UNSIGNED"
+    assert p.hud_label == "pharma-utility 0.1.2 DEMO UNSIGNED"
     assert tuple(p.faults().causes) == ("bearing_wear", "misalignment", "cavitation")
     assert p.sample_log("P-3").name == "p3_vibration.csv" and p.sample_log("P-9") is None
 

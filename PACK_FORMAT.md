@@ -20,6 +20,7 @@ packs/<pack-id>/
   faults/<class>.yaml           causes, manual sections, symptom words, sensor signatures
   sensors/<class>.yaml          sensor channels, units, which ones feed WARDEN facts
   docs/<manual>.pdf             the manual PAGE searches and cites
+  models/<class>.yaml           optional: the ATLAS exploded-view model (james-model/0.1)
   data/<file>.csv               sample logs (demo only; Step 4 replaces with live adapters)
 ```
 
@@ -52,6 +53,7 @@ Unknown fields anywhere in the manifest are refused, so a typo cannot silently d
 | `faults` | yes | path to the fault file |
 | `sensors` | yes | path to the sensor file |
 | `manual` | yes | path to the manual PDF |
+| `model` | no | path to the ATLAS model (see below) |
 
 ### assets[]
 
@@ -66,6 +68,22 @@ Unknown fields anywhere in the manifest are refused, so a typo cannot silently d
 Note: `assets` is plant data, not OEM data. It lives in the pack for the demo and will move to a
 separate site file once there is more than one site (Step 10, fleet memory).
 
+## ATLAS model (james-model/0.1)
+
+A schematic of one equipment class for the exploded view. Not CAD: a list of named parts, each built from a few
+shapes, in millimetres (x along the shaft, y up, z toward the viewer).
+
+| Field | Meaning |
+|---|---|
+| `format` | Must be `james-model/0.1`. |
+| `class` | The equipment class id it is listed under. |
+| `label`, `source` | Shown on screen. `source` says who drew it and from what; demo models say they are not OEM CAD. |
+| `parts[]` | `id`, `label`, `role` (one line for the part card), `hazard` (a hazard tag from the rules file, or none), `keywords` (words in a manual step that name this part; the longest match wins), `explode` (x, y, z travel), `shapes`. |
+| `shapes[]` | `cylinder` (`radius`, optional `radius2` for a cone, `length`, `axis`), `box` (`size`), `impeller` (`radius`, `length`, `vanes`). All take `at`. |
+
+A step lights a part when the step carries the part's hazard tag (narrowed to the parts the step names, when several
+share a tag), or when the step names one of the part's keywords. Deterministic, reviewable, no AI.
+
 ## Loader rules (all fail closed)
 
 The loader (`james_core/pack.py`) refuses the whole pack, listing every problem, if any of these fail:
@@ -78,6 +96,8 @@ The loader (`james_core/pack.py`) refuses the whole pack, listing every problem,
 6. A class or asset points at a file that is not in `files`.
 7. Two assets share an `asset_id` or an `aruco_id`, or an asset names an unknown class.
 8. The pack says `approved` but one of its rules files does not say `status: approved`.
+9. A model does not match the schema, is listed under a different class, repeats a part id, or gives a part a
+   `hazard` that is not a hazard tag in that class's rules file (a typo would silently drop the red highlight).
 
 Hashes give tamper detection today. Step 2 adds an ed25519 signature over `manifest.yaml`,
 and since the manifest pins every file's hash, one signature covers the whole pack.

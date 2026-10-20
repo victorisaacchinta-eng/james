@@ -22,6 +22,8 @@ from typing import Literal, Optional
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
+from james_core import model3d
+
 FORMAT = "james-pack/0.1"
 PACKS_DIR = Path(__file__).resolve().parents[1] / "packs"
 DEFAULT_PACK = "pharma-utility"
@@ -55,6 +57,7 @@ class EquipmentClass(_Strict):
     faults: str
     sensors: str
     manual: str
+    model: Optional[str] = None      # ATLAS exploded view (james-model/0.1), optional
 
 
 class AssetEntry(_Strict):
@@ -140,6 +143,7 @@ class Pack:
     signed: bool = False          # Step 2 (ed25519) sets this
     blobs: dict = None            # rel path -> verified bytes
     manifest_bytes: bytes = b""
+    models_by_class: dict = None  # class id -> model3d.Model (ATLAS), for classes that ship one
 
     @property
     def snapshot(self) -> str:
@@ -236,6 +240,10 @@ class Pack:
 
     def sensors(self, cls: Optional[str] = None) -> Sensors:
         return self.sensors_by_class[cls or self.primary_class]
+
+    def model(self, cls: Optional[str] = None):
+        """The class's ATLAS model (james_core.model3d.Model), or None if the pack ships none."""
+        return (self.models_by_class or {}).get(cls or self.primary_class)
 
     def asset(self, asset_id: str) -> Optional[AssetEntry]:
         return next((a for a in self.manifest.assets if a.asset_id == asset_id), None)
@@ -364,9 +372,9 @@ def load_pack(root: str | Path) -> Pack:
     for cid, ec in m.equipment_classes.items():
         if not re.fullmatch(CLASS_ID, cid):
             problems.append(f"class '{cid}': ids use lowercase letters, digits and underscores")
-        for field in ("rules", "rule_tests", "faults", "sensors", "manual"):
+        for field in ("rules", "rule_tests", "faults", "sensors", "manual", "model"):
             ref = getattr(ec, field)
-            if ref not in m.files:
+            if ref is not None and ref not in m.files:
                 problems.append(f"class {cid}: {field} '{ref}' is not listed in files")
     ids, tags = set(), set()
     for a in m.assets:
@@ -385,7 +393,7 @@ def load_pack(root: str | Path) -> Pack:
         raise PackError(name, problems)
 
     # 4. the files each class uses parse and agree with each other
-    faults, sensors = {}, {}
+    faults, sensors, models = {}, {}, {}
     for cid, ec in m.equipment_classes.items():
         f = _yaml(blobs[ec.faults], problems, ec.faults)
         if f is not None:
@@ -421,10 +429,18 @@ def load_pack(root: str | Path) -> Pack:
                                 f"rules are {rules.get('suite')} v{rules.get('version')}")
         elif rules is not None:
             problems.append(f"{ec.rules}: must be a mapping")
+        if ec.model is not None:
+            raw_model = _yaml(blobs[ec.model], problems, ec.model)
+            if raw_model is not None:
+                hz = set((rules or {}).get("hazard_keywords") or {}) if isinstance(rules, dict) else set()
+                model, model_problems = model3d.parse(raw_model, hz, cid)
+                problems += [f"{ec.model}: {p}" for p in model_problems]
+                if model is not None:
+                    models[cid] = model
     if problems:
         raise PackError(name, problems)
     return Pack(root=root, manifest=m, faults_by_class=faults, sensors_by_class=sensors, blobs=blobs,
-                manifest_bytes=mf_bytes)
+                manifest_bytes=mf_bytes, models_by_class=models)
 
 
 @lru_cache(maxsize=None)

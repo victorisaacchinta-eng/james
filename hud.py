@@ -190,10 +190,15 @@ class Hud:
                     cv2.line(img, lens.fingertip, c, J.TEAL, 1, cv2.LINE_AA)
         if getattr(lens, "hand", None):
             J.skeleton(img, lens.hand, J.HAND_LINKS, J.TEXT_2)
+        if v.get("atlas") is not None:                          # ATLAS: how open the hand is, what it is doing
+            v["atlas"].hands.draw_ring(img, v["atlas"])
         if lens.fingertip:
             p = v.get("pinch_progress", 0.0)
+            atlas = v.get("atlas")
             if state == "LOCKED":
                 cs = "LOCKED"
+            elif atlas is not None:                         # in ATLAS the cursor picks parts; it never shows a confirm arc
+                cs, p = ("TARGETED" if atlas.hover else ("TARGETABLE" if lens.pinching else "TRACKING")), 0.0
             elif p >= 1:
                 cs = "SELECTED"
             elif p > 0:
@@ -206,12 +211,38 @@ class Hud:
                 cs = "TRACKING"
             J.cursor(img, lens.fingertip, cs, p)
 
+    @staticmethod
+    def _atlas_link(img, rect, atlas, lens):
+        """A thin line from the ATLAS view to the real machine's tag, when it is in view: this drawing is that pump."""
+        if lens is None:
+            return
+        for t in lens.tags:
+            if t.asset_id == atlas.asset_id:
+                c = (int(t.center[0]), int(t.center[1]))
+                x, y, w, h = rect
+                inside = x <= c[0] <= x + w and y <= c[1] <= y + h
+                corner = (int(x), int(min(max(c[1], y), y + h)))
+                if not inside:
+                    cv2.line(img, corner, c, J.TEAL, 1, cv2.LINE_AA)
+                    cv2.circle(img, corner, 3, J.TEAL, -1, cv2.LINE_AA)
+                return
+
     # ---------- frame ----------
     def draw(self, img, v: dict, lens=None):
         H, W = img.shape[:2]
         state = v["state"]
         if state == "LOCKED":                                   # JSIL: locked interface dims
             img[:] = cv2.addWeighted(img, 0.45, img * 0, 0.55, 0)
+        cw = min(500, max(380, int(W * 0.36)))
+        atlas = v.get("atlas")
+        if atlas is not None:                                   # ATLAS fills the free camera space right of the card
+            ax = J.S4 + cw + J.S6
+            rect = (ax, 52 + J.S4, W - ax - J.S4, H - 52 - J.S4 - 30 - J.S4)
+            if rect[2] >= 240 and rect[3] >= 200:
+                atlas.draw(img, rect)
+                self._atlas_link(img, rect, atlas, lens)
+            else:
+                self.flash("ATLAS needs a wider window (1280 x 720 works).", AMBER, 1)
         if lens is not None:
             self._lens(img, v, lens)
 
@@ -229,7 +260,6 @@ class Hud:
         J.text(img, J.fit(sys_line, room, 10, "mono"), W - J.S4, 43, 10, J.MUTED, "mono", anchor="r")
 
         # task card
-        cw = min(500, max(380, int(W * 0.36)))
         self._card(img, v, J.S4, 52 + J.S4, cw, H - 52 - J.S4 - 44 - 90)
 
         # telemetry (F)

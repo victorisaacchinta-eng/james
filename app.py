@@ -6,7 +6,7 @@
 
 Keys: U unlock/lock | V start/stop voice | 1 scripted request (labelled) | T confirm target
       C confirm by key (fallback, logged) | S skip step | E escalate | A senior approves last job
-      L/Z/P confirm lockout / zero energy / PPE | R new job | Q quit
+      L/Z/P confirm lockout / zero energy / PPE | X ATLAS exploded view | R new job | Q quit
 """
 from __future__ import annotations
 
@@ -25,6 +25,7 @@ from agents import llm
 from agents.echo import Recorder, Transcriber, parse_intent
 from agents.foreman import Foreman, Plan
 from agents.page import ManualIndex
+from atlas import Atlas, StepContext
 import jsil as J
 from hud import AMBER, GREEN, RED, Hud
 from james_core import egress
@@ -39,7 +40,11 @@ from james_core.session import (Complete, Escalate, EvidenceReady, FactsUpdated,
 
 SCRIPTED = "Pump 3 is vibrating more than usual"
 KEYS = ("U lock | V voice | 1 scripted | T target | pinch = confirm | C key-confirm | S skip | E escalate | A approve | "
-        "L Z P facts | Y/N answer FOREMAN | O sensor log on/off | R new job | F telemetry | H hints | Q quit")
+        "L Z P facts | Y/N answer FOREMAN | X inside view | O sensor log on/off | R new job | F telemetry | H hints | Q quit")
+# Keys that confirm or answer something (C T L Z P Y N) or start a request (V, 1). While ATLAS is open the hand
+# belongs to ATLAS, so none of them act: close it first.
+CONFIRM_KEYS = set("ctlzpyn")
+ATLAS_BLOCKED_KEYS = CONFIRM_KEYS | set("v1")
 FACT_GROUPS = [
     ("loto_confirmed", ("loto_confirmed",), "Lockout/tagout applied?"),
     ("zero_energy_verified", ("zero_energy_verified",), "Zero energy verified with a try-start?"),
@@ -69,12 +74,15 @@ class App:
         self.q: queue.Queue = queue.Queue()
         self.recorder, self.transcriber = Recorder(), Transcriber()
         self.echo_backend = "-"
+        self.atlas: Atlas | None = None
         self.new_session()
 
     # ---------- session helpers ----------
     def new_session(self):
         if getattr(self, "foreman", None) is not None:
             self.foreman.cancel.set()                     # an investigation still running belongs to the old job
+        if getattr(self, "atlas", None) is not None and self.atlas.active:
+            self.close_atlas("new_job")                   # ATLAS shows one job's machine; a new job starts closed
         self.session = Session(self.ledger, self.policy, actions=self.actions)
         self.session.IDLE_LOCK = timedelta(minutes=5)     # demo talk time; tune for the floor
         self.plan: Plan | None = None
@@ -264,6 +272,9 @@ class App:
         return None
 
     def pinch(self, gesture="pinch_hold"):
+        if self.atlas_open():                             # defence in depth: run_live never routes a pinch here
+            self.hud.flash("ATLAS is open: close it (X) to confirm. A pinch in ATLAS only picks parts.", AMBER)
+            return
         s = self.state
         if self.question and s == State.EVIDENCE_GATHERING:
             self.answer(True)                             # pinch = yes to FOREMAN's question
@@ -292,6 +303,68 @@ class App:
             self.safe(Pinch(confirmation=Confirmation(proposal_id="none", gesture=gesture, hold_ms=800)))
         else:
             self.hud.flash("Nothing to confirm right now", AMBER)
+
+    # ---------- ATLAS (exploded view) ----------
+    def atlas_open(self) -> bool:
+        return self.atlas is not None and self.atlas.active
+
+    def close_atlas(self, reason: str = "closed", now: float | None = None):
+        if not self.atlas_open():
+            return
+        now = time.monotonic() if now is None else now
+        self.atlas.close()
+        self.ledger.append(self.session.id, "atlas_closed", {"asset_id": self.atlas.asset_id, "reason": reason,
+                                                             "open_ms": int((now - self.atlas.opened_at) * 1000)})
+
+    def sync_atlas(self):
+        """ATLAS only ever shows the machine of the live, unlocked job. An idle lock, a lost or changed target
+        closes it (iteration 5 review: an idle lock used to leave it open over the next job)."""
+        if not self.atlas_open():
+            return
+        tgt = self.session.target
+        if self.state == State.LOCKED:
+            self.close_atlas("locked")
+        elif tgt is None or tgt.asset_id != self.atlas.asset_id:
+            self.close_atlas("target_changed")
+
+    def toggle_atlas(self, now: float | None = None):
+        now = time.monotonic() if now is None else now
+        if self.atlas_open():
+            self.close_atlas("x", now)
+            return
+        if self.state == State.LOCKED:
+            self.hud.flash("Locked. Press U first.", AMBER)
+            return
+        tgt = self.session.target
+        if tgt is None:
+            self.hud.flash("Point at a machine tag first, then X shows its inside.", AMBER)
+            return
+        cls = config.PACK.class_of(tgt.asset_id)
+        model = config.PACK.model(cls) if cls else None    # never fall back to another class's drawing
+        if model is None:
+            self.hud.flash(f"Pack {config.PACK.manifest.id} has no ATLAS model for {cls}.", AMBER)
+            return
+        if self.atlas is None or self.atlas.model is not model:
+            self.atlas = Atlas(model, self.policy, reduced_motion=getattr(config, "REDUCED_MOTION", False),
+                               idle_sway=getattr(config, "ATLAS_IDLE_SWAY", True))
+        self.atlas.open(tgt.asset_id, now)
+        self.ledger.append(self.session.id, "atlas_opened", {"asset_id": tgt.asset_id, "class": cls,
+                                                             "model": model.label, "pack_snapshot": config.PACK.snapshot})
+
+    def atlas_context(self) -> StepContext:
+        sess, s = self.session, self.state
+        facts = dict(sess.facts)
+        if sess.proposal and s in (State.AWAITING_CONFIRMATION, State.SAFETY_BLOCKED):
+            st = sess.proposal.step
+            return StepContext(text=st.text, touches=tuple(st.touches), index=sess.proposal.step_index,
+                               total=sess.proposal.step_total, blocked=s == State.SAFETY_BLOCKED,
+                               rule_ids=tuple(sess.decision.rule_ids) if sess.decision else (), facts=facts)
+        return StepContext(facts=facts)
+
+    def log_atlas_events(self):
+        if self.atlas is not None:
+            for kind, payload in self.atlas.pop_events():
+                self.ledger.append(self.session.id, kind, payload)
 
     def set_facts(self, facts):
         self.safe(FactsUpdated(facts={f: True for f in facts}))
@@ -410,6 +483,10 @@ class App:
                             for r in self.plan.trace if r.round > 0][-4:] + \
                 [f"Left out: {x}" for x in self.plan.excluded[:2]]
         v["transcript"] = self.transcript
+        self.sync_atlas()
+        if self.atlas_open():
+            self.atlas.ctx = self.atlas_context()
+            v["atlas"] = self.atlas
         if self.latency is not None:
             how = "scripted input, no speech to text" if self.input_label == "SCRIPTED" else "from end of speech"
             v["latency"] = f"Fault to first sourced step: {self.latency:.1f} s ({how}; lab, sample data)"
@@ -441,9 +518,14 @@ class App:
                 "t": lambda: self.pinch("key_fallback") if self.state == State.TARGET_PENDING else None,
                 "r": lambda: (self.new_session(), self.safe(Unlock(presenter_id="presenter"))),
                 "f": lambda: setattr(self, "show_telemetry", not self.show_telemetry),
-                "h": lambda: setattr(self.hud, "show_hints", not self.hud.show_hints)}
+                "h": lambda: setattr(self.hud, "show_hints", not self.hud.show_hints),
+                "x": self.toggle_atlas}
         if k == "q":
             return False
+        self.sync_atlas()
+        if self.atlas_open() and k in ATLAS_BLOCKED_KEYS:
+            self.hud.flash("ATLAS is open: close it (X) first. Nothing is confirmed or asked from inside ATLAS.", AMBER)
+            return True
         if k in acts:
             acts[k]()
         return True
@@ -463,7 +545,7 @@ def run_live(voice: bool):
     if not cap.isOpened():
         sys.exit("Camera not available. Allow camera access for Terminal in System Settings > Privacy & Security.")
     lens = Lens()
-    t0, pinch_start, fired, cooldown_until = time.monotonic(), None, False, 0.0
+    t0, gate = time.monotonic(), PinchHold()
     timer = J.FrameTimer()                      # measured telemetry (F shows it)
     cv2.namedWindow("JAMES", cv2.WINDOW_NORMAL)
     try:
@@ -477,27 +559,21 @@ def run_live(voice: bool):
             r = lens.process(frame, ts)
             timer.mark("perception")
             app.drain()
+            now = time.monotonic()
+            app.sync_atlas()
+            # ATLAS owns the hand while it is open: a pinch picks or turns parts and can NEVER confirm a step
+            if app.atlas_open():
+                app.atlas.update(mirror_result(r, frame.shape[1]) if config.MIRROR else r, now)
+                app.log_atlas_events()
             # target: pointed tag (high confidence) or a lone visible tag (needs confirmation)
-            if app.state == State.TARGET_PENDING:
+            if app.state == State.TARGET_PENDING and not app.atlas_open():
                 if r.pointed and r.pointed.asset_id and r.point_conf >= 0.85:
                     app.target(r.pointed.asset_id, "asset_tag", r.point_conf)
                 elif len(r.tags) == 1 and r.tags[0].asset_id and not app.session.pending_target:
                     app.target(r.tags[0].asset_id, "asset_tag", 0.80)
                 elif not r.tags and getattr(r, "keys", None):
                     app.key_card_seen()
-            # pinch-and-hold
-            progress = 0.0
-            now = time.monotonic()
-            if r.pinching and now >= cooldown_until and not fired:
-                pinch_start = pinch_start or now
-                held = (now - pinch_start) * 1000
-                progress = held / app.session.PINCH_HOLD_MS
-                if held >= app.session.PINCH_HOLD_MS:
-                    fired = True
-                    cooldown_until = now + 1.2          # one confirm per deliberate pinch
-                    app.pinch("pinch_hold")
-            elif not r.pinching:
-                pinch_start, fired = None, False
+            progress = gate.step(app, r.pinching, now)       # pinch-and-hold (never while ATLAS is open)
             v = app.view()
             v["pinch_progress"] = progress
             if app.recorder.active:
@@ -516,6 +592,30 @@ def run_live(voice: bool):
                 break
     finally:
         lens.close(); cap.release(); cv2.destroyAllWindows()
+
+
+class PinchHold:
+    """Pinch and hold to confirm, one confirm per deliberate pinch. While ATLAS is open the pinch belongs to
+    ATLAS; a pinch still held when ATLAS closes must be released before it can confirm anything."""
+
+    def __init__(self):
+        self.start, self.fired, self.cooldown_until = None, False, 0.0
+
+    def step(self, app, pinching: bool, now: float) -> float:
+        if app.atlas_open():
+            self.start, self.fired = None, pinching
+            return 0.0
+        if pinching and now >= self.cooldown_until and not self.fired:
+            self.start = self.start or now
+            held = (now - self.start) * 1000
+            if held >= app.session.PINCH_HOLD_MS:
+                self.fired = True
+                self.cooldown_until = now + 1.2
+                app.pinch("pinch_hold")
+            return held / app.session.PINCH_HOLD_MS
+        if not pinching:
+            self.start, self.fired = None, False
+        return 0.0
 
 
 def mirror_result(r, width):
@@ -539,6 +639,10 @@ def mirror_result(r, width):
     m.keys = keys
     m.hand = [fx(p) for p in r.hand] if r.hand else None
     m.fingertip = fx(r.fingertip) if r.fingertip else None
+    if getattr(r, "pinch_point", None):
+        m.pinch_point = fx(r.pinch_point)
+    if getattr(r, "swipe", None) in ("left", "right"):
+        m.swipe = {"left": "right", "right": "left"}[r.swipe]
     m.others = [[fx(p) for p in h] for h in getattr(r, "others", [])]
     return m
 
@@ -584,9 +688,14 @@ def run_sim(save_frames: bool = True) -> App:
     app.q.put(("heard", SCRIPTED, 0.95, time.perf_counter(), "SCRIPTED")); app.drain(); snap("step1")
     app.pinch(); snap("step2")
     app.skip(); app.skip(); snap("blocked")          # skip lockout and zero energy on purpose
+    app.toggle_atlas(); app.atlas.settle(); snap("atlas_blocked")       # X: where is the blocked part?
+    app.atlas.select("coupling_guard"); snap("atlas_part")             # pinch it: what guards it
+    app.pinch()                                      # refused: a pinch never confirms while ATLAS is open
+    app.atlas.select("coupling_guard"); app.toggle_atlas()
     while app.state == State.SAFETY_BLOCKED and app.missing_group():
         app.pinch()
     snap("cleared")
+    app.toggle_atlas(); app.atlas.settle(); snap("atlas_cleared"); app.toggle_atlas()
     app.pinch(); snap("step5")
     app.pinch(); snap("complete")
     app.approve()

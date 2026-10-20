@@ -1,0 +1,7 @@
+# Dev only: rebuild atlas_library/ from the original 3D files (python -m tools.atlas_import).
+# The JAMES app never needs these; it reads the converted files with NumPy.
+trimesh>=4
+DracoPy
+fast-simplification
+scipy
+networkx

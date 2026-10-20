@@ -26,6 +26,21 @@ JAMES guides a technician through a repair without touching a screen.
 | Point | Index finger toward the tag, or touch the tag with your fingertip. Hold still for half a second. | "This machine" |
 | Pinch | Touch thumb tip to index fingertip and hold until the ring turns green (0.6 s). Release before the next pinch. | "Yes / confirm" |
 
+**Inside ATLAS (X)** the hand works the drawing instead, and nothing can be confirmed until you close it:
+
+| Gesture | Does |
+|---|---|
+| Open your hand slowly | Explode the machine: the explode follows how open your hand is |
+| Close your hand | Assemble it (the same control, at zero) |
+| Move or twist an open hand | Turn and tilt it; twisting rolls it |
+| Point (index finger only) | Light up the part under your fingertip; its card shows which WARDEN rules guard it |
+| Pinch a part | Pull it out and drag it; let go and it springs back, still picked |
+| Pinch empty space | Clear the pick |
+| Two hands, apart or together | Zoom in or out |
+
+The strip at the bottom of the ATLAS panel is the legend: the gesture ATLAS sees right now is lit amber. The ring
+around your hand grows as you open it; its amber arc is the explode level.
+
 Keep your hand inside the camera view, about 30 to 60 cm away, palm facing the camera.
 
 ## Keys
@@ -44,6 +59,7 @@ Keep your hand inside the camera view, about 30 to 60 cm away, palm facing the c
 | **R** | Start a new job. |
 | **Y / N** | Answer FOREMAN's question (pinch also means yes). |
 | **O** | Sensor log on/off (demo): with it off, FOREMAN has to ask you instead. |
+| **X** | ATLAS on/off: the exploded view of the targeted machine. While it is open, C, T, L, Z, P, Y and N do nothing. |
 | **Q** | Quit. |
 
 ## One full run (90 seconds)
@@ -71,6 +87,8 @@ Keep your hand inside the camera view, about 30 to 60 cm away, palm facing the c
 | ECHO shows "keyword rules" | Ollama isn't running: start `ollama serve` in tab 1. JAMES still works. |
 | "Step was stale" | You waited over 90 s. Pinch again: WARDEN re-checks first. |
 | Stuck anywhere | **R** for a new job, or **U** twice. |
+| "ATLAS is open: close it (X)" | You pinched or pressed a confirm key inside ATLAS. Press **X**, then confirm. |
+| ATLAS lines shake or lag | Tune `SMOOTH_MIN_CUTOFF` (lower = steadier) and `SMOOTH_BETA` (higher = less lag) in `config.py`. `REDUCED_MOTION = True` turns off all animation. |
 | Camera or mic refused | System Settings, Privacy & Security, Camera / Microphone, turn on Terminal, run again. |
 
 ## Reset between rehearsals
@@ -91,6 +109,75 @@ model, or the rules when the model is off).
 
 For a written trace with the live local model (to see every FOREMAN decision): `python -m tools.maintenance_trace`
 (writes `records/trace_<time>.md`). `python -m tools.build_id` prints the build id to quote with it.
+
+## The ATLAS app (james.py, or `python atlas_app.py`)
+
+Open your palm for the launcher and pinch the **ATLAS** tile, or say "open atlas". ATLAS fills the window; the
+launcher and the voice gestures are off until you close it.
+
+The sidebar on the left is the legend. The gesture ATLAS sees right now is lit amber, so you always know what
+it thinks your hand is doing.
+
+| Gesture | What happens |
+|---|---|
+| Open slowly | Explode it: the explode follows how open your hand is, 0 to 100% |
+| Close your hand | Pull it back together |
+| Move or twist (open or closed hand) | Move: turn and tilt it. Twist your wrist: roll it |
+| Point (index finger only) | The part under your fingertip lights up; the sidebar card says what it is |
+| Pinch a part | Pull it out and drag it. Let go: it springs back into place and stays picked |
+| Pinch empty space | Clear the pick |
+| Two hands: apart / together | Zoom in / out (0.4x to 6x) |
+| Peace sign, held half a second | Next model (the cyan arc on the ring fills while you hold) |
+| Quick pinch on a tile in the bottom shelf | That model loads, exploded |
+| Quick pinch on **Reset view** / **Close** | Back to the start view / leave ATLAS |
+
+**Colours.** Each part is coloured by family: wheels and tyres saffron, body and structure steel blue, power and
+drive coral, sensors and signal green, mechanisms rose, glass and optics sky blue, interior and soft parts tan. The
+key is at the bottom right; the picked part's card names its family. Pointing at or picking a part lightens it and
+dims the rest. The ring under the model is a turntable that turns with it, and while exploded a dashed line runs
+from each part back to where it sits assembled. (In the maintenance app parts stay grey: there, colour means
+safety.)
+
+**Heat and frame rate.** The FPS is shown top right. ATLAS draws at most 30 frames a second, looks for a hand on
+only every 3rd frame once none has been seen for 3 seconds, redraws the sidebar and shelf only when they change,
+and on a machine too slow to redraw everything while the model moves, draws fewer lines until it stops. The
+settings are `ATLAS_MAX_FPS`, `ATLAS_IDLE_AFTER_S` and `ATLAS_FRAME_BUDGET_MS` in `config.py`.
+
+Tips: a resting hand never turns anything (it has to move a few pixels first). Keep your hand open while you
+turn the model if you want it to stay exploded. Pointing, pinching and the peace sign freeze the explode, so
+curling your fingers to point does not collapse it. Every threshold is in `config.py` (`ATLAS_*`).
+
+Keys inside ATLAS: **A D** turn, **W S** tilt, **+ -** zoom, **E** explode or assemble, **N B** next or previous
+model, **Tab** next part, **R** reset, **Esc** close (in `atlas_app.py`, Esc or Q quits). In owner-key mode your
+second hand counts as "another hand": ATLAS reads it only for two-hand zoom, never to pick or launch anything.
+
+## CANTUS, the rhythm game (james.py, or `python cantus.py`)
+
+Open your palm for the launcher and pinch the **CANTUS** tile, or say "open cantus".
+
+| Do | What happens |
+|---|---|
+| Point at a song card and pinch | The song starts after a 3-2-1 |
+| Pinch Easy / Normal / Hard | Changes the difficulty (shown on every card) |
+| Swing through a block the way its arrow points | PERFECT, GOOD or OK by timing; the block splits |
+| Swing the wrong way, or with the wrong hand | BAD: the combo resets |
+| Let a block pass | MISS |
+| Peace sign, held almost a second | Pause; pinch Resume or Songs |
+| Pinch Close on the song list | Back to JAMES |
+
+Red blocks are for your left hand, blue for your right. Alone with one hand, colours don't count. A dot means
+any direction. Swing from the elbow, not the wrist: a slow drift through a block does nothing.
+
+**Your own songs:** put MP3, M4A or WAV files in `data/cantus/songs/` (in the james folder) and press **R** on
+the song list. The card says "Mapping the beat..." for a few seconds, then it is ready. The map is saved, so the
+next time it is instant. Name files "Artist - Title.mp3" and the card shows both.
+
+**If the blocks and the music don't line up:** press **]** while playing if the blocks arrive before the beat,
+**[** if they arrive after. Each press moves them 10 ms. Put the number you like in `CANTUS_AUDIO_OFFSET_MS`
+in `config.py`.
+
+Keys: **1-9** play that song, **D** difficulty, **R** rescan your songs, **Space** pause, **Enter** play again
+(results), **Esc** back, **Q** quit.
 
 ## JAMES's voice (james.py)
 

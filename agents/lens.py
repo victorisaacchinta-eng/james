@@ -13,6 +13,7 @@ import numpy as np
 
 import config
 import owner as OW
+from james_core.motion import HandSmoother, Swipe, Trail
 
 TIP, PIP, MCP, THUMB_TIP, WRIST, MID_MCP = 8, 6, 5, 4, 0, 9
 
@@ -45,6 +46,10 @@ class LensResult:
     keys: list = field(default_factory=list)     # owner key markers seen this frame (Tag), never asset tags
     enroll: float | None = None       # enrolment progress 0..1 while K enrolment runs
     enroll_msg: tuple | None = None   # (ok, message) once, when an enrolment finishes
+    pinch_point: tuple[int, int] | None = None   # where the fingertip aimed just BEFORE this pinch began (held
+                                                 # for the whole pinch): pinching drags the tip off target
+    speed: float = 0.0                # fingertip speed, px/s (smoothed)
+    swipe: str | None = None          # 'left' | 'right' | 'up' | 'down' on the frame a swipe completes (raw coords)
 
 
 def owner_key_id() -> int | None:
@@ -92,6 +97,13 @@ class Lens:
         self.owner = make_owner()
         self.owner_paused = False
         self._enroll: OW.Enroller | None = None
+        # motion (james_core/motion.py): 1-euro smoothing, pre-pinch aim, swipes
+        self._smooth = HandSmoother(getattr(config, "SMOOTH_MIN_CUTOFF", 1.0), getattr(config, "SMOOTH_BETA", 0.01)) \
+            if getattr(config, "SMOOTHING", True) else None
+        self._trail = Trail()
+        self._swipe = Swipe()
+        self._anchor: tuple[int, int] | None = None
+        self._was_pinching = False
 
     # ---------- owner (key or ring) ----------
     def toggle_pause(self) -> bool:
@@ -123,7 +135,11 @@ class Lens:
         out = self._hands.detect_for_video(self._mp.Image(image_format=self._mp.ImageFormat.SRGB, data=rgb), ts_ms)
         hands = [[(int(p.x * w), int(p.y * h)) for p in lm] for lm in (out.hand_landmarks or [])]
         handed = [(hd[0].category_name if hd else "") for hd in (getattr(out, "handedness", None) or [[]] * len(hands))]
-        self.gestures(res, frame_bgr, hands, handed, ts_ms, [k.center for k in res.keys])
+        raw = hands
+        if self._smooth is not None:
+            hands = self._smooth(hands, ts_ms / 1000)      # same order as raw: index i is the same hand in both
+        self.gestures(res, frame_bgr, hands, handed, ts_ms, [k.center for k in res.keys], raw=raw)
+        self.motion(res, ts_ms / 1000)
         # stability: the same tag for POINT_STABLE_MS before it counts (time-based, so it feels the same at any FPS)
         pid = res.pointed.id if res.pointed else None
         if pid is None:
@@ -135,13 +151,34 @@ class Lens:
             res.point_conf = min(res.point_conf, 0.5)
         return res
 
-    def gestures(self, res: LensResult, frame_bgr, hands: list, handed: list, ts_ms: int, keys=()):
+    def motion(self, res: LensResult, t: float):
+        """Speed, swipe and the pre-pinch aim for the driving hand. Split out so it is testable."""
+        tip = res.fingertip
+        if res.pinching and not self._was_pinching and tip is not None:
+            back = self._trail.at(t - getattr(config, "PINCH_AIM_LOOKBACK_MS", 120) / 1000)
+            self._anchor = tuple(int(round(v)) for v in (back or tip))
+        elif not res.pinching:
+            self._anchor = None
+            if self._was_pinching:                 # a pinch-drag just ended: its path is not a swipe
+                self._trail.pts.clear()
+                self._swipe.until = max(self._swipe.until, t + 0.3)
+        self._was_pinching = res.pinching
+        res.pinch_point = self._anchor
+        self._trail.push(t, tip)
+        recent = self._trail.window(t - 0.12)
+        if len(recent) >= 2 and recent[-1][0] > recent[0][0]:
+            res.speed = math.dist(recent[0][1], recent[-1][1]) / (recent[-1][0] - recent[0][0])
+        if tip is not None and res.hand and not res.pinching:
+            palm = math.dist(res.hand[WRIST], res.hand[MID_MCP])
+            res.swipe = self._swipe(self._trail, t, palm)
+
+    def gestures(self, res: LensResult, frame_bgr, hands: list, handed: list, ts_ms: int, keys=(), raw=None):
         """Pick the one hand that may drive input, then read its gestures. Split out so it is testable
         without MediaPipe: hands are lists of 21 (x, y) pixel points."""
         if self._enroll is not None:                       # K: enrol the ring on the largest hand in view
             big = OW.OwnerFilter.largest(hands)
             if big is not None:
-                self._enroll.add(frame_bgr, hands[big], handed[big] if big < len(handed) else "")
+                self._enroll.add(frame_bgr, (raw or hands)[big], handed[big] if big < len(handed) else "")
             res.enroll = self._enroll.progress(ts_ms)
             if self._enroll.done(ts_ms):
                 sig, msg = self._enroll.finish()
@@ -153,7 +190,7 @@ class Lens:
         if res.owner_paused:
             idx, res.owner, res.owner_score = OW.OwnerFilter.largest(hands), "off", 0.0
         else:
-            idx, res.owner, res.owner_score = self.owner.select(frame_bgr, hands, ts_ms, keys)
+            idx, res.owner, res.owner_score = self.owner.select(frame_bgr, raw or hands, ts_ms, keys)
         res.others = [hd for i, hd in enumerate(hands) if i != idx]
         if idx is None:
             self._pinched = False
