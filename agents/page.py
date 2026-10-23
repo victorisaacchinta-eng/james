@@ -70,7 +70,7 @@ class ManualIndex:
         if use_embeddings:
             self._embed_init()
 
-    # ---- BM25 ----
+    # BM25
     def _bm25_init(self, k1=1.5, b=0.75):
         self.k1, self.b = k1, b
         self.docs = [tokens(c.title + " " + c.text) for c in self.chunks]
@@ -90,7 +90,7 @@ class ManualIndex:
             out.append(s)
         return out
 
-    # ---- embeddings in Qdrant (in-process) ----
+    # embeddings in Qdrant (in-process)
     def _embed_init(self):
         try:
             vecs = llm.embed([c.title + ". " + c.text for c in self.chunks])
@@ -130,7 +130,7 @@ class ManualIndex:
         ranked = sorted(range(len(scores)), key=lambda i: -scores[i])[:k]
         return [(conf[i], self.chunks[i]) for i in ranked if bm[i] > 0 or dense[i] > 0]
 
-    # ---- what agents ask PAGE for ----
+    # what agents ask PAGE for
     def troubleshoot(self, symptoms: tuple[str, ...], transcript: str, asset_id: str, query: str | None = None,
                      retry: bool = True) -> tuple[list[Evidence], list[str]]:
         """Return the troubleshooting evidence and a note per search attempt.
@@ -146,7 +146,7 @@ class ManualIndex:
         rows = [(c, s) for s, c in hits if "Likely cause" in c.text]
         wanted = {SYNONYMS.get(t, t) for t in symptoms}
         focused = [(c, s) for c, s in rows if any(w in c.text.lower() for w in wanted)]
-        weak = bool(wanted) and not focused and bool(rows)       # rows match 'pump', not the symptom (ST-09)
+        weak = bool(wanted) and not focused and bool(rows)       # rows match 'pump', not the symptom
         rows = focused or rows
         if not rows:
             return [], notes
@@ -182,7 +182,7 @@ class ManualIndex:
         return None
 
     def step_on_page(self, text: str, page: int) -> bool:
-        """The cited page really contains this step (iteration 2, ST-09: a citation must support the step)."""
+        """The cited page really contains this step (a citation must support the step)."""
         norm = lambda t: " ".join(t.split()).lower()
         return norm(text) in norm(self.pages.get(page, ""))
 

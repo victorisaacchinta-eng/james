@@ -44,7 +44,7 @@ class PackError(Exception):
         super().__init__(f"Pack '{pack}' refused:\n" + "\n".join(f"  - {p}" for p in self.problems))
 
 
-# ---------- schemas (unknown fields are refused everywhere) ----------
+# schemas (unknown fields are refused everywhere)
 
 class _Strict(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, populate_by_name=True)
@@ -99,7 +99,7 @@ class Signature(_Strict):
 
 
 class Observation(_Strict):
-    """A question FOREMAN may ask when the evidence can't separate two causes (iteration 2, P0-E).
+    """A question FOREMAN may ask when the evidence can't separate two causes.
     `source` says where the distinction comes from (a manual page), so the question is not invented."""
     id: str = Field(pattern=r"^[a-z0-9_]+$")
     question: str = Field(min_length=8)
@@ -127,12 +127,12 @@ class Sensors(_Strict):
     channels: dict[str, Channel] = Field(min_length=1)
 
 
-# ---------- the loaded pack ----------
+# the loaded pack
 
 @dataclass(frozen=True)
 class Pack:
     """A loaded pack. Every file was read ONCE, hash-checked, and is served from memory (`read`): what JAMES
-    uses is exactly what was verified, even if the folder changes later (iteration 2, P1-E / ST-17).
+    uses is exactly what was verified, even if the folder changes later.
     `snapshot` is the sha256 of the manifest bytes. The manifest lists every file's hash AND the asset
     bindings (ArUco ids, sample logs), so one id pins the whole pack as used on a job. Hashing is integrity,
     not authenticity: an unsigned pack can be edited and re-hashed by anyone with the folder."""
@@ -260,7 +260,7 @@ class Pack:
         return self.path(a.sample_log) if a and a.sample_log else None
 
 
-# ---------- loading ----------
+# loading
 
 def sha256(path: Path) -> str:
     h = hashlib.sha256()
@@ -452,7 +452,7 @@ def active_pack(name: Optional[str] = None) -> Pack:
     return load_pack(PACKS_DIR / name)
 
 
-# ---------- dev tools ----------
+# dev tools
 
 def rehash(root: str | Path) -> list[str]:
     """Rewrite the manifest's `files:` block from what is in the folder. Dev only:

@@ -85,7 +85,7 @@ class AtlasViewer:
         self.fps = 0.0
         self._last_render = None
 
-    # ---------- open / switch / close ----------
+    # open / switch / close
     def open(self, now: float | None = None, model_id: str | None = None):
         now = time.monotonic() if now is None else now
         if model_id is not None:
@@ -123,7 +123,7 @@ class AtlasViewer:
     def flash(self, text: str, now: float | None = None, secs: float = 3.0):
         self.msg = (text, (time.monotonic() if now is None else now) + secs)
 
-    # ---------- layout ----------
+    # layout
     def layout(self, W: int, H: int):
         shelf_y = H - 30 - J.S3 - SHELF_H
         top = 52 + J.S3
@@ -169,7 +169,7 @@ class AtlasViewer:
         elif key == "close":
             self.close()
 
-    # ---------- input ----------
+    # input
     def update(self, view, now: float):
         if not self.active or view is None:
             return
@@ -224,7 +224,7 @@ class AtlasViewer:
             return True
         return False
 
-    # ---------- drawing ----------
+    # drawing
     def thumb(self, m) -> np.ndarray:
         if m.id not in self._thumbs:
             a = Atlas(m, None, reduced_motion=True, idle_sway=False)
@@ -429,7 +429,7 @@ class AtlasViewer:
             J.cursor(img, tip, st, 0.0)
 
 
-# ---------------- standalone ----------------
+# standalone
 def demo(out_dir: Path, models=None) -> list[Path]:
     """No camera: a picture of every model (exploded, with a part picked) and one zoomed view. For checking a
     build and for screenshots."""

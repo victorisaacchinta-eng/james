@@ -120,7 +120,7 @@ def test_real_synthesis_smoke():
     assert a.dtype == np.float32 and len(a) / n.sr > 0.4
 
 
-# ---- the switch in the HUD ----
+# the switch in the HUD
 
 def test_switch_toggles_and_is_remembered(monkeypatch):
     from test_talk import _james
@@ -155,7 +155,7 @@ def test_voice_commands_use_the_same_switch(monkeypatch):
     assert not j.talker.muted
 
 
-# ---- Mac playback goes through afplay, never in-process PortAudio (mic_check --talk crash, 2026-09-26 04:14) ----
+# Mac playback goes through afplay, never in-process PortAudio (mic_check --talk crash, 2026-09-26 04:14)
 
 class FakeAfplay:
     """Stands in for subprocess.Popen(['afplay', wav]). Plays for `secs` unless terminated."""

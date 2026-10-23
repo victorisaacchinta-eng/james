@@ -176,7 +176,7 @@ def open_target(r: Resolved) -> None:
         subprocess.Popen([r.where] if r.how == "cmd" else ["xdg-open", r.where])
 
 
-# ---------- any installed app (voice: "open <name>") ----------
+# any installed app (voice: "open <name>")
 # Launch-only: JAMES can start any installed application by name. It never runs shell commands,
 # opens files or changes settings from speech, so a misheard phrase can at worst open the wrong app.
 
@@ -301,7 +301,7 @@ def find_app(spoken: str, apps: dict[str, str]) -> tuple[str, str, float] | None
         return alias, apps[alias], 0.95
     hit = _best(q, apps)
     w = q.split()
-    while (hit is None or hit[2] < 0.72) and len(w) > 1 and w[0] in GENERIC_LEAD:     # log 00:32: "open the game asphalt"
+    while (hit is None or hit[2] < 0.72) and len(w) > 1 and w[0] in GENERIC_LEAD:     # "open the game asphalt"
         w = w[1:]
         hit = _best(" ".join(w), apps)
     return hit if hit and hit[2] >= 0.72 else None

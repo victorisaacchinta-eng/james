@@ -1,4 +1,4 @@
-"""Iteration 2 P1-E: the pack is used exactly as verified (ST-17), and a restart cancels what was pending (ST-12)."""
+"""The pack is used exactly as verified, and a restart cancels what was pending."""
 import shutil
 from datetime import timedelta
 

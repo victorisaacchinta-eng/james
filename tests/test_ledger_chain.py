@@ -1,4 +1,4 @@
-"""Iteration 10: the ledger hash chain. Tamper-evident against edits that get past the triggers."""
+"""The ledger hash chain. Tamper-evident against edits that get past the triggers."""
 import sqlite3
 
 import pytest
@@ -129,7 +129,7 @@ def test_a_failed_append_leaves_neither_half(tmp_path, monkeypatch):
     assert led.verify()["ok"]
 
 
-# ---------- review round (iteration 10): attacks the first version missed ----------
+# review round: attacks the first version missed
 
 def test_a_forged_event_is_never_sealed_by_reopening(tmp_path):
     led = _led(tmp_path)
@@ -214,7 +214,7 @@ def test_legacy_seal_is_recorded_and_bounded(tmp_path):
     assert not v["ok"] and "newer than the upgrade" in v["problems"][0]
 
 
-# ---------- second review round ----------
+# second review round
 
 def test_wiping_chain_meta_does_not_let_the_app_seal_a_forged_tail(tmp_path):
     led = _led(tmp_path)

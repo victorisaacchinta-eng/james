@@ -17,7 +17,7 @@ from agents import llm
 ACTIONS = ("open", "close", "play", "search", "collect", "message", "ask", "media", "send", "identify")
 SERVICES = ("", "youtube", "spotify", "github", "amazon", "chatgpt", "claude", "perplexity", "gemini", "instagram",
             "whatsapp")
-# an action the model may only use when the words ask for it (log 01:35:38: an invented "send"; 01:36:24: an invented "identify")
+# an action the model may only use when the words ask for it (an invented "send"; 01:36:24: an invented "identify")
 EVIDENCE = {
     "send": r"\b(?:send|enter|submit|return)\b",
     "identify": r"\b(?:identify|what(?:'s| is) (?:this|that)|scan|look at (?:this|it))\b",

@@ -69,7 +69,7 @@ class Store:
                 CREATE TRIGGER IF NOT EXISTS {t}_no_delete BEFORE DELETE ON {t}
                 BEGIN SELECT RAISE(ABORT, '{t} is append-only'); END;""")
 
-    # ---------- datasets ----------
+    # datasets
     def dataset_by_hash(self, sha: str) -> Optional[Dataset]:
         with self.lock:
             d = self.db.execute("SELECT * FROM datasets WHERE sha256=?", (sha,)).fetchone()
@@ -103,7 +103,7 @@ class Store:
                 raise
             return imported
 
-    # ---------- jobs ----------
+    # jobs
     def create_job(self, **kw) -> dict:
         with self.lock:
             job = dict(job_id=kw.pop("job_id", None) or new_id("JOB").upper(),
@@ -127,7 +127,7 @@ class Store:
             sets = ",".join(f"{k}=?" for k in fields)
             self.db.execute(f"UPDATE jobs SET {sets} WHERE job_id=?", (*fields.values(), job_id))
 
-    # ---------- events ----------
+    # events
     def append(self, job_id: str, type_: str, payload: dict, key: Optional[str] = None,
                corrects: Optional[str] = None) -> dict:
         with self.lock:
@@ -151,7 +151,7 @@ class Store:
         with self.lock:
             return [self._ev(r) for r in self.db.execute("SELECT * FROM job_events WHERE job_id=? ORDER BY seq", (job_id,))]
 
-    # ---------- idempotency ----------
+    # idempotency
     def remembered(self, job_id: str, key: Optional[str]) -> Optional[dict]:
         if not key:
             return None
@@ -164,7 +164,7 @@ class Store:
             with self.lock:
                 self.db.execute("INSERT OR IGNORE INTO idempotency VALUES(?,?,?)", (job_id, key, json.dumps(response, default=str)))
 
-    # ---------- proposals ----------
+    # proposals
     def add_proposal(self, p) -> None:
         with self.lock:
             self.db.execute("INSERT INTO proposals VALUES(?,?,?,?,?,?)",
@@ -180,7 +180,7 @@ class Store:
             r = self.db.execute("SELECT body FROM proposals WHERE proposal_id=?", (proposal_id,)).fetchone()
             return json.loads(r["body"]) if r else None
 
-    # ---------- prerequisites ----------
+    # prerequisites
     def add_prereq(self, job_id, asset_id, proposal_id, fact, value, step_id, reporter) -> dict:
         with self.lock:
             rid = new_id("pre")
@@ -198,7 +198,7 @@ class Store:
         with self.lock:
             return [dict(r) for r in self.db.execute(q + " ORDER BY created_at", args)]
 
-    # ---------- reviews ----------
+    # reviews
     def add_review(self, job_id, decision, reason, reviewer, revokes=None) -> dict:
         with self.lock:
             rid = new_id("rev")

@@ -100,7 +100,6 @@ class HandEngine:
     def busy(self) -> bool:
         return self.grab is not None or self.two is not None
 
-    # ------------------------------------------------------------------
     def update(self, a, r, now: float):
         hand = getattr(r, "hand", None)
         hand = hand if HP.valid(hand) else None
@@ -208,7 +207,6 @@ class HandEngine:
         self.prev = pose
         self.active = self._legend_row(pose, now)
 
-    # ------------------------------------------------------------------
     def _turn(self, a, hand, now):
         """Turn, tilt and roll from the palm's movement and twist. A clutch per axis: the hand must first leave
         a small circle around where it rested (so tracking jitter turns nothing); then it tracks 1:1 until it
@@ -335,7 +333,6 @@ class HandEngine:
             return "fist" if (self.open_s or 0) < 0.3 else "open"
         return None
 
-    # ------------------------------------------------------------------
     def draw_ring(self, img, a, other=None):
         """The ring around the driving hand: its size follows how open the hand is, the amber arc is the
         explode level, a cyan arc fills while a peace sign is held. During two-hand zoom: a dashed line
@@ -371,7 +368,7 @@ class HandEngine:
                    "mono")
 
 
-# ---------------- the legend ----------------
+# the legend
 
 @lru_cache(maxsize=256)
 def _fit_hand(pose, angle, box):

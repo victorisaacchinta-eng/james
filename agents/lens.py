@@ -117,7 +117,7 @@ class Lens:
         self._anchor: tuple[int, int] | None = None
         self._was_pinching = False
 
-    # ---------- owner (key or ring) ----------
+    # owner (key or ring)
     def toggle_pause(self) -> bool:
         """X in key mode: let any hand drive (True) or require the key again (False)."""
         self.owner_paused = not self.owner_paused

@@ -67,7 +67,7 @@ class Recorder:
         try:
             self._stream = self._open(sd)
         except Exception as e:  # noqa: BLE001
-            # PortAudio -9986 (log 02:18 to 02:19): CoreAudio's device list went stale, e.g. the default mic or
+            # PortAudio -9986: CoreAudio's device list went stale, e.g. the default mic or
             # output changed. Restart PortAudio once so it re-reads the devices, then try again.
             self._count("errors")
             self.last_error = str(e)[:120]
@@ -94,7 +94,7 @@ class Recorder:
         return stream
 
     def stop(self) -> np.ndarray:
-        """Stop and release the device. The stream is released even if stopping it fails (iteration 2, P0-F)."""
+        """Stop and release the device. The stream is released even if stopping it fails."""
         if not self._stream:
             return np.zeros(0, np.float32)
         s, self._stream = self._stream, None

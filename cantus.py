@@ -68,7 +68,7 @@ def rank_for(acc: float) -> str:
     return next(r for a, r in RANKS if acc >= a)
 
 
-# ---------------- audio ----------------
+# audio
 
 class Player:
     """Plays one song. On the Mac through `afplay` in its own process (the same reason talk.py does: PortAudio
@@ -141,7 +141,7 @@ class Player:
 atexit.register(Player.stop_all)                                  # never leave afplay running (or stopped) behind
 
 
-# ---------------- the song library ----------------
+# the song library
 
 @dataclass
 class Entry:
@@ -256,7 +256,7 @@ class Library:
         return True
 
 
-# ---------------- hands as blades ----------------
+# hands as blades
 
 class Blade:
     """One hand's fingertip path: where it went this frame, how fast and which way."""
@@ -314,7 +314,7 @@ def seg_hits_rect(a, b, rect) -> bool:
     return True
 
 
-# ---------------- one play of one chart ----------------
+# one play of one chart
 
 @dataclass
 class Live:
@@ -393,7 +393,7 @@ class Run:
         lv.state, lv.at, lv.judge, lv.cut = kind.lower(), now_s, kind, cut
 
 
-# ---------------- geometry ----------------
+# geometry
 
 def stage(W: int, H: int) -> dict:
     """The hit frame (4 x 2 cells) in the lower middle, and the vanishing point blocks come from."""
@@ -414,7 +414,7 @@ def block_rect(g: dict, b: BM.Block, dt: float, approach: float):
     return x, y, half
 
 
-# ---------------- the app ----------------
+# the app
 
 class CantusApp:
     """The CANTUS screen: song select, play, pause, results. Hands and keys; nothing leaves this window."""
@@ -445,7 +445,7 @@ class CantusApp:
         self.sel = 0
         self._last_t = None
 
-    # ---------- open / close ----------
+    # open / close
     def open(self, now: float | None = None):
         now = time.monotonic() if now is None else now
         self.active, self.screen = True, "select"
@@ -461,7 +461,7 @@ class CantusApp:
     def flash(self, text: str, now: float | None = None, secs: float = 3.0):
         self.msg = (text, (time.monotonic() if now is None else now) + secs)
 
-    # ---------- song clock ----------
+    # song clock
     def song_t(self, now: float) -> float:
         if self.paused_at is not None:
             now = self.paused_at
@@ -506,7 +506,7 @@ class CantusApp:
         self.player.stop()
         self.run, self.screen, self.paused_at = None, "select", None
 
-    # ---------- input ----------
+    # input
     def update(self, view, now: float):
         if not self.active or view is None:
             return
@@ -669,7 +669,7 @@ class CantusApp:
                 return True
         return False
 
-    # ---------- drawing ----------
+    # drawing
     def render(self, frame, view=None, now: float | None = None):
         now = time.monotonic() if now is None else now
         H, W = frame.shape[:2]
@@ -926,7 +926,7 @@ class CantusApp:
                 J.cursor(img, tip, "TARGETED" if self.hover else ("TARGETABLE" if getattr(view, "pinching", False) else "TRACKING"), 0.0)
 
 
-# ---------------- standalone ----------------
+# standalone
 
 def demo(out_dir: Path) -> list[Path]:
     """No camera: the select screen, a moment of play with two hands slicing, the pause and results screens."""

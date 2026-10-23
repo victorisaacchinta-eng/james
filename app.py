@@ -56,7 +56,7 @@ FACT_GROUPS = [
 
 class App:
     def __init__(self, sim: bool = False):
-        egress.set_mode("maintenance")                  # iteration 2 P0-D: local only, consumer web tools refused
+        egress.set_mode("maintenance")                  # local only, consumer web tools refused
         for d in (config.DATA, config.RECORDS):
             d.mkdir(exist_ok=True)
         self.sim = sim
@@ -79,7 +79,7 @@ class App:
         self.atlas: Atlas | None = None
         self.new_session()
 
-    # ---------- session helpers ----------
+    # session helpers
     def new_session(self):
         if getattr(self, "foreman", None) is not None:
             self.foreman.cancel.set()                     # an investigation still running belongs to the old job
@@ -97,7 +97,7 @@ class App:
         self.blocks = 0
         self.last_file = ""
         self.confirmed_at = ""
-        self.question = None                            # FOREMAN's open question (iteration 2, P0-E)
+        self.question = None                            # FOREMAN's open question
         self.answers: dict[str, bool] = {}
         self.intent = None
 
@@ -113,7 +113,7 @@ class App:
     def state(self) -> State:
         return self.session.state
 
-    # ---------- inputs ----------
+    # inputs
     def toggle_lock(self):
         if self.state == State.LOCKED:
             self.safe(Unlock(presenter_id="presenter"))
@@ -185,7 +185,7 @@ class App:
     def investigate(self):
         """Run FOREMAN's loop (again, after an answer). In sim it runs inline so the sim stays deterministic."""
         self.busy = "FOREMAN is investigating: PAGE, PULSE and LEDGER, then the next step it picks..."
-        changed = config.PACK.drift()                     # iteration 2 ST-17: the folder changed after start-up
+        changed = config.PACK.drift()                     # the folder changed after start-up
         if changed:
             self.ledger.append(self.session.id, "pack_changed_on_disk", {
                 "files": changed, "using_snapshot": config.PACK.snapshot})
@@ -213,7 +213,7 @@ class App:
         self.investigate()
 
     def key_card_seen(self):
-        """Iteration 2 P1-C / ST-15: a card with the owner-key id was shown as if it were a machine tag. Before
+        """A card with the owner-key id was shown as if it were a machine tag. Before
         2026-09-26 pump P-3's printed tag used that id. It is never a target; say what to do instead."""
         now = time.monotonic()
         if now - getattr(self, "_key_card_t", -99) < 10:
@@ -306,7 +306,7 @@ class App:
         else:
             self.hud.flash("Nothing to confirm right now", AMBER)
 
-    # ---------- ATLAS (exploded view) ----------
+    # ATLAS (exploded view)
     def atlas_open(self) -> bool:
         return self.atlas is not None and self.atlas.active
 
@@ -320,7 +320,7 @@ class App:
 
     def sync_atlas(self):
         """ATLAS only ever shows the machine of the live, unlocked job. An idle lock, a lost or changed target
-        closes it (iteration 5 review: an idle lock used to leave it open over the next job)."""
+        closes it (an idle lock used to leave it open over the next job)."""
         if not self.atlas_open():
             return
         tgt = self.session.target
@@ -408,7 +408,7 @@ class App:
             self.last_file = str(path.relative_to(config.ROOT))
 
     def finish_job(self):
-        if getattr(self, "_finished", None) == self.session.id:   # iteration 2 ST-13: one work record per job
+        if getattr(self, "_finished", None) == self.session.id:   # one work record per job
             return
         self._finished = self.session.id
         path = config.RECORDS / f"repair_record_{self.session.id}.md"
@@ -439,7 +439,7 @@ class App:
             w.writerow([datetime.now().isoformat(timespec="seconds"), self.session.id, self.input_label, f"{self.latency:.2f}",
                         self.plan.cause, self.plan.cause_backend, self.echo_backend, self.plan.orchestrator, "yes"])
 
-    # ---------- what the HUD shows ----------
+    # what the HUD shows
     def view(self) -> dict:
         s, sess = self.state, self.session
         v = {"state": s.value, "keys": KEYS, "echo_backend": self.echo_backend.split(" (")[0],
@@ -494,7 +494,7 @@ class App:
             v["latency"] = f"Fault to first sourced step: {self.latency:.1f} s ({how}; lab, sample data)"
         return v
 
-    # ---------- queue ----------
+    # queue
     def drain(self):
         while not self.q.empty():
             kind, *args = self.q.get()
@@ -533,7 +533,7 @@ class App:
         return True
 
 
-# ---------------- live loop ----------------
+# live loop
 def run_live(voice: bool):
     import cv2
     from agents.lens import Lens
@@ -686,7 +686,7 @@ def banner(app: App) -> str:
         f"  ledger       : {config.DB}", ""])
 
 
-# ---------------- sim (no camera, no mic) ----------------
+# sim (no camera, no mic)
 def run_sim(save_frames: bool = True) -> App:
     import numpy as np
     app = App(sim=True)

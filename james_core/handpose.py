@@ -122,7 +122,7 @@ class PoseTracker:
         return self.pose
 
 
-# ---------------- clean hands, for the legend and the tests ----------------
+# clean hands, for the legend and the tests
 
 # finger: knuckle position (x, y) in palm units (wrist at 0, middle knuckle at (0, -1)), lean in degrees,
 # segment lengths

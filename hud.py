@@ -15,7 +15,7 @@ import numpy as np
 
 import jsil as J
 
-# ---- back-compatible names, mapped to JSIL tokens ----
+# back-compatible names, mapped to JSIL tokens
 AMBER, RED, GREEN, CYAN = J.CONFIRM, J.ERROR, J.SUCCESS, J.CYAN
 WHITE, GREY, INK = J.TEXT, J.TEXT_2, J.BLACK
 FONT = cv2.FONT_HERSHEY_SIMPLEX
@@ -45,7 +45,7 @@ def chip(img, label, x, y, fg=INK, bg=AMBER, scale=0.45):
     return J.pill(img, label, x, y, bg) + J.S2
 
 
-# ---- state presentation ----
+# state presentation
 STATE_LABEL = {
     "LOCKED": "Locked", "TARGET_PENDING": "Targeting", "TARGET_CONFIRMED": "Target confirmed",
     "INTENT_CAPTURED": "Request captured", "EVIDENCE_GATHERING": "Gathering evidence",
@@ -84,7 +84,7 @@ class Hud:
     def flash(self, msg: str, color=AMBER, secs=3.5):
         self.banner = (msg, color, time.time() + secs)
 
-    # ---------- the task card ----------
+    # the task card
     def _card_lines(self, v: dict, width: int) -> list[tuple]:
         """(kind, payload) rows. kinds: label, head, body, kv, mono, gap."""
         rows: list[tuple] = []
@@ -193,7 +193,7 @@ class Hud:
             yy += rh
         return y + h
 
-    # ---------- world stage overlays ----------
+    # world stage overlays
     def _lens(self, img, v, lens):
         state = v["state"]
         for t in lens.tags:
@@ -250,7 +250,7 @@ class Hud:
                     cv2.circle(img, corner, 3, J.TEAL, -1, cv2.LINE_AA)
                 return
 
-    # ---------- frame ----------
+    # frame
     def draw(self, img, v: dict, lens=None):
         H, W = img.shape[:2]
         state = v["state"]

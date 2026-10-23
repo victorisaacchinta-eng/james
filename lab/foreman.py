@@ -154,7 +154,7 @@ def fixture_proposal(ctx: Context) -> GuidanceProposal:
                             questions=tuple(questions), steps=tuple(steps), evidence_ids=tuple(sorted(ev_ids)))
 
 
-# ---------- validation (applies to every mode) ----------
+# validation (applies to every mode)
 
 NUM = re.compile(r"[-+]?\d+(?:\.\d+)?")
 
@@ -192,7 +192,7 @@ def validate(p: GuidanceProposal, ctx: Context) -> GuidanceProposal:
     return p
 
 
-# ---------- optional local AI (Ollama) ----------
+# optional local AI (Ollama)
 
 def local_ai_proposal(ctx: Context) -> GuidanceProposal:
     """Ask a local model to choose and order steps from the catalog. Raises ProviderUnavailable
@@ -226,7 +226,7 @@ def local_ai_proposal(ctx: Context) -> GuidanceProposal:
     req = urllib.request.Request(settings.OLLAMA_URL.rstrip("/") + "/api/chat", data=body,
                                  headers={"Content-Type": "application/json"})
     try:
-        from james_core import egress                  # iteration 3: plant context only to the pinned local model
+        from james_core import egress                  # plant context only to the pinned local model
         with egress.urlopen(req, "local_model", timeout=settings.OLLAMA_TIMEOUT_S) as r:
             msg = json.loads(r.read().decode())["message"]
         content = msg.get("content") or msg.get("thinking") or ""

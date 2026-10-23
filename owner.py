@@ -255,12 +255,12 @@ class OwnerFilter:
         return None, "searching", s
 
 
-# ---------------- owner key: a printed ArUco marker on the watch strap or the back of the hand ----------------
+# owner key: a printed ArUco marker on the watch strap or the back of the hand
 KEY_VOTES, KEY_WINDOW = 3, 5          # the key must sit on the same hand in 3 of 5 frames
 KEY_REACH = 0.7                       # max distance from the hand's forearm-to-knuckle line, in palm lengths
 KEY_FOREARM = 0.9                     # how far down the forearm (in palm lengths) a watch-strap key may sit
 KEY_LOST_MS = 4000                    # key mode: the owner hand may leave view this long and still be the owner
-                                      # (log 01:07:43: lost after 1.5 s while reaching for Spotify, X pressed at 01:07:55)
+                                      # (the key was lost after 1.5 s while reaching for Spotify)
 
 
 def key_distance(pts, center) -> float:
@@ -310,7 +310,7 @@ class KeyFilter:
         self.cand["votes"].append(hit)
         return sum(self.cand["votes"]) >= KEY_VOTES
 
-    epoch = 0                                  # +1 each time a hand takes control (iteration 2, P1-B / ST-14)
+    epoch = 0                                  # +1 each time a hand takes control
 
     def _take(self, h, ts_ms):
         self.lock = {"wrist": h[WRIST], "palm": _palm(h), "seen": ts_ms}

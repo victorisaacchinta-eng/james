@@ -1,5 +1,5 @@
-"""Iteration 2 (voice): P0-A low-confidence confirmation, P0-B negation / questions / quotes, ST-03 partial plans.
-Every sentence here is either from the live log or from the iteration 2 scenario list."""
+"""Voice: low-confidence confirmation, negation / questions / quotes, partial plans.
+Every sentence here is either from the live log or from the scenario list."""
 import time
 
 import commands as C
@@ -17,11 +17,11 @@ def _j(monkeypatch, installed=("Safari", "Google Chrome", "Spotify")):
     return JM, j, ran
 
 
-# ---- ST-01: low confidence -> clarification, then only a clear yes runs it ----
+# low confidence -> clarification, then only a clear yes runs it
 
 def test_st01_low_confidence_asks_then_yes_runs(monkeypatch):
     JM, j, ran = _j(monkeypatch)
-    j.on_heard("Open the KPDR search for a go-by request.", 0.43)          # log 02:00:39
+    j.on_heard("Open the KPDR search for a go-by request.", 0.43)
     assert ran == [] and j.pending and "Did you mean" in j.talker.said[-1]
     assert "kpdr" in j.voice["heard"].lower() and "kpdr" in j.voice["steps"][-1][2].lower()   # what was heard + what would run
     j.on_heard("yes", 0.9)
@@ -62,11 +62,11 @@ def test_st01_model_is_never_asked_at_low_confidence(monkeypatch):
     monkeypatch.setattr(JM.llm, "available", lambda *a, **k: True)
     called = []
     monkeypatch.setattr(JM.James, "_model_plan", lambda self, *a: called.append(a))
-    j.on_heard("You have it in? You do what you do.", 0.43)                   # log 01:59:10
+    j.on_heard("You have it in? You do what you do.", 0.43)
     assert called == [] and ran == []
 
 
-# ---- ST-02: negation, questions, quotes ----
+# negation, questions, quotes
 
 NEGATION_CASES = ["Do not send it.", "Explain how to close an app.", "Search for Close Encounters.",
                    "I said send yesterday, but do not send this."]
@@ -111,16 +111,16 @@ def test_titles_with_negative_words_still_play():
         == ["play"]
 
 
-# ---- ST-03: partial plans are disclosed ----
+# partial plans are disclosed
 
 def test_st03_unsupported_parts_are_named():
     t = "Open Wikipedia. Search for Bhopal Krishna, Chairman of East Engineering College. Find his son and return his name full name."
-    steps = C.drop_answer_searches(C.plan(t))                                 # log 02:01:16
+    steps = C.drop_answer_searches(C.plan(t))
     assert [s.kind for s in steps] == ["open", "search"] and steps[0].arg == "wikipedia"
     assert C.leftovers(t, steps) == ["return his name full name"]
     t = "Open any browsers for the top 5 latest movies, Hollywood, and paste, copy and paste 6 movies on Macpad."
     assert C.leftovers(t, [C.Step("search", "top 5 latest movies hollywood", site="youtube")]) == \
-        ["paste, copy and paste 6 movies on Macpad"]                        # log 02:21:23 (model dropped it)
+        ["paste, copy and paste 6 movies on Macpad"]                        # (model dropped it)
     assert C.leftovers("Search for Close Encounters.", C.plan("Search for Close Encounters.")) == []
     assert C.leftovers("play despacito on spotify and then close chrome",
                        C.plan("play despacito on spotify and then close chrome")) == []
@@ -133,4 +133,4 @@ def test_st03_app_says_what_it_did_not_do(monkeypatch):
 
 
 def test_trailing_comma_after_app_name():
-    assert C.plan("Open WhatsApp, Search for Siri")[0].arg == "whatsapp"       # log 02:03:34
+    assert C.plan("Open WhatsApp, Search for Siri")[0].arg == "whatsapp"

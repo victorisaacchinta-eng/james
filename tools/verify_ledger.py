@@ -1,4 +1,4 @@
-"""Check the JAMES ledger's hash chain (iteration 10). Read-only: it never writes to the database.
+"""Check the JAMES ledger's hash chain. Read-only: it never writes to the database.
 
     python -m tools.verify_ledger                          # the app's database (config.DB)
     python -m tools.verify_ledger path/to/james.db

@@ -42,7 +42,7 @@ class State(str, Enum):
     COMPLETE = "COMPLETE"
 
 
-# ---- typed events ----
+# typed events
 class Unlock(Strict):
     presenter_id: str
 
@@ -77,7 +77,7 @@ class NextStep(Strict):
     pass
 
 class ObservationRecorded(Strict):
-    """The technician's yes/no answer to a question FOREMAN asked (iteration 2, P0-E). Evidence, not approval."""
+    """The technician's yes/no answer to a question FOREMAN asked. Evidence, not approval."""
     question_id: str
     question: str
     answer: bool
@@ -122,7 +122,7 @@ class Session:
     def restore(cls, ledger: Ledger, policy: Policy, session_id: str, **kw) -> "Session":
         """After a crash or restart: always LOCKED, nothing carried over but the log.
 
-        A restart is a CANCELLATION of whatever was in progress (iteration 2, ST-12): no pending question,
+        A restart is a CANCELLATION of whatever was in progress: no pending question,
         proposal or confirmation survives, and the log says exactly what was cancelled, so nobody later
         mistakes an unfinished job for a finished one. Recovery means starting a new job."""
         s = cls(ledger, policy, session_id=session_id, **kw)
@@ -153,7 +153,7 @@ class Session:
         self.facts: dict = {}
         self.proposal_at: Optional[datetime] = None
 
-    # ---- entry point ----
+    # entry point
     def handle(self, event) -> State:
         name = type(event).__name__
         if not isinstance(event, EVENTS):
@@ -183,7 +183,7 @@ class Session:
             self._reset()
             self._go(State.LOCKED, "auto_locked", {"reason": "idle"})
 
-    # ---- handlers ----
+    # handlers
     def _on_Lock(self, e: Lock) -> State:
         self._reset()
         return self._go(State.LOCKED, "locked", {"reason": e.reason})

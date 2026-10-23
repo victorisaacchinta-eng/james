@@ -84,7 +84,7 @@ def identify(frame_bgr) -> dict:
                         images=[encode(frame_bgr)], timeout=90)
     out["fix"] = []                                   # fixes now come per chosen problem (fix_for)
     out["problems"] = PR.merge(str(out.get("object") or ""), out.get("common_problems"), out.get("problem"))
-    for k in ("brand", "model", "part_needed"):          # live 04:20:42: the model wrote the string 'null'
+    for k in ("brand", "model", "part_needed"):          # the model wrote the string 'null'
         if str(out.get(k) or "").strip().lower() in ("", "null", "none", "unknown", "n/a", "not visible"):
             out[k] = None
     for k in ("model_confidence", "problem_confidence"):

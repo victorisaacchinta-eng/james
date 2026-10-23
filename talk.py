@@ -2,7 +2,7 @@
 what is on the screen (the problems it found, the fix steps).
 
 Two engines, both offline, both on this laptop:
-  kokoro  A neural voice (Kokoro-82M, Apache-2.0, run with onnxruntime through kokoro-onnx). Natural, not robotic.
+  kokoro  A neural voice (Kokoro-82M, Apache-2.0, run with onnxruntime through kokoro-onnx).
           Male voices only in JAMES's list; default British 'bm_fable'. Needs `pip install kokoro-onnx==0.6.1`
           and the two files in assets/voice/ (python -m tools.get_voice checks or fetches them).
   say     macOS `say`, the fallback: the best male English voice installed. The text goes in on stdin.
@@ -94,7 +94,7 @@ def sentences(text: str) -> list[str]:
         out.append(p)
     if out and len(out[0]) > FIRST_MAX:                  # a short first piece = a quick first word
         cut = [m for m in re.finditer(r",\s+", out[0]) if 25 <= m.start() <= len(out[0]) - 20]
-        if cut:                                          # live 04:21:14: a 104-character first sentence took 2.7 s
+        if cut:                                          # a 104-character first sentence took 2.7 s
             out[0:1] = [out[0][:cut[0].start() + 1], out[0][cut[0].end():]]
     return out
 
@@ -102,7 +102,7 @@ def sentences(text: str) -> list[str]:
 FIRST_MAX = 90
 
 
-# ---------------- preferences (the on/off switch and the chosen voice) ----------------
+# preferences (the on/off switch and the chosen voice)
 def prefs_path() -> Path:
     import config
     return Path(config.DATA) / "prefs.json"
@@ -127,7 +127,7 @@ def save_prefs(**kw) -> dict:
     return d
 
 
-# ---------------- the neural engine ----------------
+# the neural engine
 def neural_files_ok(check_hash: bool = False) -> bool:
     for name, digest in MODEL_FILES.items():
         f = VOICE_DIR / name
@@ -396,7 +396,7 @@ class Talker:
                 self._busy = False
 
 
-# ---------------- what JAMES says ----------------
+# what JAMES says
 NAMES = r"(?:james|jarvis)"                     # what people call the assistant out loud (Whisper often hears either)
 
 
@@ -419,7 +419,7 @@ def part_of_day(hour: int | None = None) -> str:
 
 
 def salute(sir: str = SIR, hour: int | None = None) -> str:
-    """'Good morning, sir'; between midnight and 5 am (log 02:19:58 said 'Good evening') 'Working late, sir?'"""
+    """'Good morning, sir'; between midnight and 5 am (said 'Good evening') 'Working late, sir?'"""
     h = time.localtime().tm_hour if hour is None else hour
     if h < 5:
         return f"Working late{', ' + sir if sir else ''}?"
@@ -535,7 +535,7 @@ PAIRS = {"glasses", "sunglasses", "spectacles", "headphones", "earphones", "earb
 
 
 def article(obj: str) -> str:
-    """'a phone', 'an apple', 'a pair of sunglasses' (log 03:26:20 said 'a sunglasses'), 'some cables'."""
+    """'a phone', 'an apple', 'a pair of sunglasses' (said 'a sunglasses'), 'some cables'."""
     o = str(obj or "object").strip()
     last = o.lower().split()[-1] if o.split() else ""
     if last in PAIRS:
@@ -563,7 +563,7 @@ _SIGN_LEAD = re.compile(r"^(?:the\s+)?(?:users?|people|owners?|you|customers?)\s
 
 
 def chosen(p: dict) -> str:
-    """Log 02:17:13: sign 'Users notice cracks...' was read as 'You would usually notice users notice cracks'."""
+    """The sign 'Users notice cracks...' was read as 'You would usually notice users notice cracks'."""
     sign = _SIGN_LEAD.sub("", str(p.get("sign") or "").strip()).rstrip(". ")
     if len(sign) > 1 and sign[1].islower():
         sign = sign[0].lower() + sign[1:]
@@ -579,7 +579,7 @@ def fix_intro(p: dict, fix: dict) -> str:
         out.append(str(fix["cause"]).rstrip(".") + ".")
     safety = str(fix.get("safety") or "").strip().rstrip(".")
     if safety and not re.fullmatch(r"(?i)(none|n/?a|null|nil|not applicable|no (specific )?(safety )?(concerns?|precautions?|risks?|hazards?))", safety):
-        out.append("A word of caution: " + safety + ".")               # log 03:26:47 said "caution: None."
+        out.append("A word of caution: " + safety + ".")               # said "caution: None."
     out.append("There is one step." if len(steps) == 1 else f"There are {NUM.get(len(steps), len(steps))} steps.")
     out.append(step(1, steps[0]))
     if len(steps) > 1:

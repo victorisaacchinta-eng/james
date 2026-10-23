@@ -122,7 +122,7 @@ def builtin_songs() -> list[Song]:
     return [_ode_to_joy(), _fur_elise(), _canon(), _turkish_march()]
 
 
-# ---------------- synth ----------------
+# synth
 
 def _tone(f0: float, dur: float, vel: float = 1.0, bass: bool = False) -> np.ndarray:
     """A soft piano-like note: a few harmonics, a fast attack and an exponential decay."""

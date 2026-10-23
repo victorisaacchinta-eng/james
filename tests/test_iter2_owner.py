@@ -1,4 +1,4 @@
-"""Iteration 2 P1-B / P1-C: a change of controlling hand mid-command (ST-14) and old printed cards (ST-15)."""
+"""A change of controlling hand mid-command and old printed cards."""
 
 from test_talk import _james
 

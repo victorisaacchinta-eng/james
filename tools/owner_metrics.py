@@ -1,4 +1,4 @@
-"""Owner-key usability numbers from the JAMES log (iteration 2, P1-B). Measures, does not guess reasons.
+"""Owner-key usability numbers from the JAMES log. Measures, does not guess reasons.
 
     python -m tools.owner_metrics                     # reads data/james_demo_log.txt
 

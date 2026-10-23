@@ -22,14 +22,14 @@ Rishi               en_IN    # Hello! My name is Rishi.
 """
 
 
-# ---------- the voice ----------
+# the voice
 
 def test_best_british_voice_is_picked(monkeypatch):
     monkeypatch.setattr(T.sys, "platform", "darwin")
     monkeypatch.setattr(T.subprocess, "run", lambda *a, **k: subprocess.CompletedProcess(a, 0, SAY_V, ""))
     v = T.installed_voices()
     assert v["Daniel (Enhanced)"] == "en_GB" and v["Jamie (Premium)"] == "en_GB"
-    assert T.pick_voice(v) == "Daniel (Enhanced)"                          # male voices first (iteration 3)
+    assert T.pick_voice(v) == "Daniel (Enhanced)"                          # male voices first
     assert T.pick_voice({"Daniel": "en_GB", "Albert": "en_US"}) == "Daniel"
     assert T.pick_voice({"Kate": "en_GB"}) == "Kate" and T.pick_voice({"Albert": "en_US"}) == ""
     assert T.pick_voice(v, "Rishi") == "Rishi"                                  # config.TALK_VOICE wins
@@ -83,7 +83,7 @@ def test_off_the_mac_it_is_silent_but_logs(monkeypatch):
     assert lines and lines[0].startswith("SAY 'Hello, sir.'")
 
 
-# ---------- what JAMES says ----------
+# what JAMES says
 
 @pytest.mark.parametrize("said,starts", [
     ("hi", "Hello, sir"), ("Hi James", "Hello, sir"), ("Hey James, how are you?", "Running smoothly"),
@@ -136,7 +136,7 @@ def test_nav(said, want):
     assert T.nav(T.drop_name(said)) == want
 
 
-# ---------- in JAMES ----------
+# in JAMES
 
 class FakeTalker:
     def __init__(self):

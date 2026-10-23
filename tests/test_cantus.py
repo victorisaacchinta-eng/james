@@ -16,7 +16,7 @@ from james_core import cantus_songs as CS
 from james_core import handpose as HP
 
 
-# ---------------- songs ----------------
+# songs
 
 def test_builtins_are_public_domain_classics_only():
     songs = CS.builtin_songs()
@@ -39,7 +39,7 @@ def test_render_is_the_right_length_and_never_clips():
     assert 0.8 < float(np.abs(a).max()) <= 0.851
 
 
-# ---------------- placement ----------------
+# placement
 
 @pytest.mark.parametrize("song", CS.builtin_songs(), ids=lambda s: s.id)
 @pytest.mark.parametrize("diff", list(BM.DIFFICULTY))
@@ -72,7 +72,7 @@ def test_harder_means_more_blocks():
         assert len(c.blocks["easy"]) <= len(c.blocks["normal"]) <= len(c.blocks["hard"])
 
 
-# ---------------- audio analysis ----------------
+# audio analysis
 
 def clicks(bpm=100, dur=24, sr=22050, start=0.5):
     y = np.random.default_rng(0).normal(0, 0.01, sr * dur).astype(np.float32)
@@ -134,7 +134,7 @@ def test_an_unreadable_file_fails_with_a_fix_not_a_crash(tmp_path, monkeypatch):
         BM.decode(bad)
 
 
-# ---------------- the judge ----------------
+# the judge
 
 import cantus as C                                                  # noqa: E402
 
@@ -256,7 +256,7 @@ def test_pause_freezes_the_song_clock(app):
     assert app.song_t(9.0) == pytest.approx(t)
 
 
-# ---------------- screens ----------------
+# screens
 
 def tap(app, p, t):
     app.update(LensResult(fingertip=p, pinching=True, pinch_point=p), t)
@@ -322,7 +322,7 @@ def test_built_in_audio_is_rendered_once(tmp_path):
     assert path2 == path and audio2 is None
 
 
-# ---------------- inside james.py ----------------
+# inside james.py
 
 def _james(monkeypatch):
     sys.modules.setdefault("sounddevice", types.ModuleType("sounddevice"))
@@ -354,7 +354,7 @@ def test_saying_open_cantus_finds_the_tile(monkeypatch, tmp_path):
     assert ok and j.cantus_requested
 
 
-# ---------------- review round: each of these misfired before its fix ----------------
+# review round: each of these misfired before its fix
 
 def test_a_fast_swing_at_low_frame_rate_still_counts():
     bl = C.Blade()

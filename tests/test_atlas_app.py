@@ -14,7 +14,7 @@ from atlas_app import AtlasViewer, demo, library_models
 from james_core.atlas_library import LIBRARY, load_library
 
 
-# ---------------- the library ----------------
+# the library
 
 def test_library_ships_real_multi_part_models_with_credits():
     models, problems = load_library()
@@ -77,7 +77,7 @@ def test_the_app_never_needs_a_3d_library():
         assert not mods & {"trimesh", "pygltflib", "DracoPy", "open3d", "pyrender", "requests", "urllib"}, (f, mods)
 
 
-# ---------------- the viewer ----------------
+# the viewer
 
 @pytest.fixture
 def viewer():
@@ -170,7 +170,7 @@ def test_render_at_640x480_does_not_crash(viewer):
     viewer.render(np.full((480, 640, 3), 70, np.uint8), None, 2.0)
 
 
-# ---------------- inside james.py ----------------
+# inside james.py
 
 def _james(monkeypatch):
     sys.modules.setdefault("sounddevice", types.ModuleType("sounddevice"))
@@ -287,7 +287,7 @@ def test_notice_names_each_source_and_year():
     assert notice.count("Source: https://") == 6 and "(c) 2024" in notice and "(c) 2025" in notice
 
 
-# ---------------- hands and the legend ----------------
+# hands and the legend
 
 def _hand(pose, wrist=(900, 600), others=()):
     from james_core import handpose as HP
@@ -327,7 +327,7 @@ def test_narrow_windows_fold_the_legend_into_a_strip(viewer):
     assert viewer.side is None and not viewer.atlas.legend_outside
 
 
-# ---------------- colour and frame cost ----------------
+# colour and frame cost
 
 def test_library_parts_are_coloured_by_family_and_job_parts_stay_grey():
     import jsil as J

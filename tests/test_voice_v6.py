@@ -23,14 +23,14 @@ def one(t):
     return s[0]
 
 
-# ---------- the log, as rules ----------
+# the log, as rules
 
-def test_cut_off_sentence_drops_the_fragment():                        # 01:33:30 searched "paradise movie and take to"
+def test_cut_off_sentence_drops_the_fragment():                        # searched "paradise movie and take to"
     st = one("Open GitHub and search for Paradise Movie and take to...")
     assert (st.kind, st.site, st.arg) == ("search", "github", "paradise movie")
 
 
-def test_close_is_close_not_open():                                    # 01:35:04 the model OPENED Asphalt
+def test_close_is_close_not_open():                                    # the model OPENED Asphalt
     st = one("Close the Asphalt agent's game.")
     assert st.kind == "close" and st.arg.startswith("asphalt")
     assert C.complexity("Close the Asphalt agent's game.", [st]) == ""   # rules, not the model
@@ -38,7 +38,7 @@ def test_close_is_close_not_open():                                    # 01:35:0
     assert one("stop the music").kind == "media"                         # stop + media word is still pause
 
 
-def test_github_links_to_notes():                                      # 01:35:34 became search + an invented "send"
+def test_github_links_to_notes():                                      # became search + an invented "send"
     st = one("Open GitHub and search for Bragg Repository and copy all of the repository links and paste them on "
              "the notepad app or the Notes app.")
     assert (st.kind, st.site, st.arg, st.to) == ("collect", "github", "bragg", "notes")
@@ -49,7 +49,7 @@ def test_youtube_links_to_clipboard():
     assert (st.kind, st.site, st.arg, st.to) == ("collect", "youtube", "arduino tutorials", "clipboard")
 
 
-def test_instagram_message():                                          # 01:36:24 Messages app + Identify (invented)
+def test_instagram_message():                                          # Messages app + Identify (invented)
     st = one("Open Chrome and login to Instagram and open messages and go to Sam and type Hi, How are you?")
     assert (st.kind, st.service, st.to, st.arg) == ("message", "instagram", "sam", "Hi, How are you?")
 
@@ -69,7 +69,7 @@ def test_not_a_message(said):
     assert all(s.kind != "message" for s in C.plan(said))
 
 
-# ---------- follow-up commands (correlation) ----------
+# follow-up commands (correlation)
 
 def test_resolve_refers_back():
     ctx = {"app": "Asphalt", "search": ("github", "rag", True), "chat": "chatgpt", "contact": "sam"}
@@ -80,7 +80,7 @@ def test_resolve_refers_back():
     assert len(problems) == 2
 
 
-# ---------- the model's plan is checked against the words ----------
+# the model's plan is checked against the words
 
 def test_model_cannot_invent_send_or_identify(monkeypatch):
     """The exact bad plans from the log are cleaned."""
@@ -114,7 +114,7 @@ def test_planner_sends_context(monkeypatch):
     assert seen["user"].startswith("Context: last app opened: Asphalt")
 
 
-# ---------- collect ----------
+# collect
 
 ITEMS = [{"title": 'evil" & do shell script "rm -rf ~', "url": "https://github.com/a/b", "note": "5 stars <b>"}]
 
@@ -149,7 +149,7 @@ def test_youtube_parse(monkeypatch):
     assert [x["title"] for x in v] == ['Arduino is "easy"', "Masterclass"] and v[1]["url"].endswith("BLrHTHUjPuw")
 
 
-# ---------- close ----------
+# close
 
 def _app(tmp_path, bid, name="X"):
     c = tmp_path / f"{name}.app" / "Contents"
@@ -169,7 +169,7 @@ def test_quit_is_by_bundle_id_and_never_terminal(tmp_path, monkeypatch):
     assert media.quit_app(_app(tmp_path, 'bad" id', "Bad"), "Bad")[0] is False
 
 
-# ---------- message ----------
+# message
 
 def test_message_urls_are_validated():
     assert C.message_url("instagram", "sam.r_01", "hi") == "https://ig.me/m/sam.r_01"

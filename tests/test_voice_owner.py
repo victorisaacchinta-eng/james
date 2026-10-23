@@ -18,7 +18,7 @@ from hands import FIST, OPEN, PEACE, hand, render   # noqa: E402
 SILVER, GOLD = (185, 185, 190), (40, 170, 220)
 
 
-# ---------- the three failures from the demo log ----------
+# the three failures from the demo log
 
 def test_open_chrome_and_play_is_one_play_step_in_chrome():
     steps = C.plan("Open chrome and play Despacito.")
@@ -70,7 +70,7 @@ def test_info_plist_display_name_is_an_alias(tmp_path, monkeypatch):
     assert hit and hit[1].endswith("zoom.us.app")
 
 
-# ---------- URLs ----------
+# URLs
 
 def test_universal_display_slug_matches_their_rule():
     assert C.ud_slug("Redmi Note 10 Pro+") == "redmi-note-10-pro"
@@ -106,7 +106,7 @@ def test_transcriber_uses_the_vocabulary_prompt(monkeypatch):
     assert txt == "open asphalt" and seen["initial_prompt"] == "Apps: Asphalt." and seen["beam_size"] == 5
 
 
-# ---------- running a plan ----------
+# running a plan
 
 def _james(monkeypatch):
     import james as JM
@@ -128,7 +128,7 @@ def test_chrome_despacito_opens_the_top_video_in_chrome(monkeypatch):
     monkeypatch.setattr(JM.egress, "urlopen", lambda *a, **k: R())
     j._before_listen = "READY"
     j.on_heard("Open chrome and play Despacito.", 0.47)
-    j.on_heard("yes", 0.9)                                    # iteration 3: heard at 0.47, so it is confirmed first
+    j.on_heard("yes", 0.9)                                    # heard at 0.47, so it is confirmed first
     for _ in range(100):
         if opened:
             break
@@ -166,7 +166,7 @@ def test_universal_display_actions_after_a_phone_is_identified(monkeypatch):
     assert "ud_display" not in [b.key for b in j.task_actions()]
 
 
-# ---------- V-sign push-to-talk ----------
+# V-sign push-to-talk
 
 class FakeRec:
     def __init__(self):
@@ -253,7 +253,7 @@ def test_v_sign_does_nothing_when_locked_or_busy(monkeypatch):
         assert not j.rec.active, setup
 
 
-# ---------- gestures and the owner ring ----------
+# gestures and the owner ring
 
 def _lens():
     from agents.lens import Lens
@@ -359,7 +359,7 @@ def test_lens_reports_other_hands_and_enrols(monkeypatch):
     assert not config.OWNER_RING.exists() and not L.owner.enrolled
 
 
-# ---------- rendering ----------
+# rendering
 
 @pytest.mark.parametrize("W,H", [(1280, 720), (1440, 900), (1920, 1080)])
 def test_voice_window_owner_and_enrol_render(monkeypatch, W, H):

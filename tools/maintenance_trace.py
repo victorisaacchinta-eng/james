@@ -1,4 +1,4 @@
-"""Maintenance investigation trace (iteration 2, P0-E and section 9). Run on the Mac with Ollama running:
+"""Maintenance investigation trace. Run on the Mac with Ollama running:
 
     python -m tools.maintenance_trace            # writes records/trace_<time>.md and prints it
 

@@ -1,4 +1,4 @@
-"""Microphone stress check (iteration 2, P0-F). Run on the Mac, JAMES closed:
+"""Microphone stress check. Run on the Mac, JAMES closed:
 
     python -m tools.mic_check                 # 15 open/record/close cycles, talkback OFF
     python -m tools.mic_check --talk          # the same, with JAMES's voice (neural, else say) before and during cycles

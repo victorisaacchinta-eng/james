@@ -1,14 +1,13 @@
 # JAMES Industry Pack Format (james-pack/0.1)
 
-Status: draft, Step 1 of the build. Open spec (Apache 2.0 per the commercialisation plan).
-Signing is Step 2 and is not part of this version yet.
+Status: draft. The spec is meant to be open (Apache 2.0). Signing is the next step and is not in this version.
 
 ## What a pack is
 
 A pack is one folder that carries everything JAMES needs to support a class of machines:
 the safety rules, the tests for those rules, the fault vocabulary, the sensor channels,
-and the manual. An OEM ships a pack; the plant runs one JAMES app across packs.
-The app code never hardcodes a machine. If it is about a machine, it comes from a pack.
+and the manual. The idea is that an OEM ships a pack and a plant runs one JAMES app across packs.
+The app code doesn't hardcode any machine; anything about a machine comes from a pack.
 
 ## Folder layout
 
@@ -21,7 +20,7 @@ packs/<pack-id>/
   sensors/<class>.yaml          sensor channels, units, which ones feed WARDEN facts
   docs/<manual>.pdf             the manual PAGE searches and cites
   models/<class>.yaml           optional: the ATLAS exploded-view model (james-model/0.1)
-  data/<file>.csv               sample logs (demo only; Step 4 replaces with live adapters)
+  data/<file>.csv               sample logs (demo only, until there are live sensor adapters)
 ```
 
 Names are a convention. The manifest is what counts: every file must be listed there.
@@ -65,8 +64,8 @@ Unknown fields anywhere in the manifest are refused, so a typo cannot silently d
 | `aruco_id` | no | ArUco DICT_4X4_50 marker id on the asset tag. Unique. |
 | `sample_log` | no | path to a sample CSV for this asset |
 
-Note: `assets` is plant data, not OEM data. It lives in the pack for the demo and will move to a
-separate site file once there is more than one site (Step 10, fleet memory).
+`assets` is plant data, not OEM data. It lives in the pack for the demo and should move to a
+separate site file once there is more than one site.
 
 ## ATLAS model (james-model/0.1)
 
@@ -82,7 +81,7 @@ shapes, in millimetres (x along the shaft, y up, z toward the viewer).
 | `shapes[]` | `cylinder` (`radius`, optional `radius2` for a cone, `length`, `axis`), `box` (`size`), `impeller` (`radius`, `length`, `vanes`). All take `at`. |
 
 A step lights a part when the step carries the part's hazard tag (narrowed to the parts the step names, when several
-share a tag), or when the step names one of the part's keywords. Deterministic, reviewable, no AI.
+share a tag), or when the step names one of the part's keywords. It is deterministic, with no model involved.
 
 ## Loader rules (all fail closed)
 
@@ -99,8 +98,8 @@ The loader (`james_core/pack.py`) refuses the whole pack, listing every problem,
 9. A model does not match the schema, is listed under a different class, repeats a part id, or gives a part a
    `hazard` that is not a hazard tag in that class's rules file (a typo would silently drop the red highlight).
 
-Hashes give tamper detection today. Step 2 adds an ed25519 signature over `manifest.yaml`,
-and since the manifest pins every file's hash, one signature covers the whole pack.
+Hashes give tamper detection today. The plan is an ed25519 signature over `manifest.yaml`;
+since the manifest pins every file's hash, one signature would cover the whole pack.
 
 ## Choosing the pack
 
@@ -114,10 +113,10 @@ python -m james_core.pack check packs/pharma-utility    # validate + run every c
 python -m james_core.pack rehash packs/pharma-utility   # after editing a pack file (dev only)
 ```
 
-`rehash` rewrites only the `files:` block. In Step 2 it will refuse to run on signed packs;
-changing a signed pack means re-signing it in OEM Studio (Step 5).
+`rehash` rewrites only the `files:` block. Once packs are signed it should refuse to run on them, and changing
+a signed pack will mean re-signing it.
 
 ## Not in this version
 
-Signatures (Step 2), a second equipment class (Step 3), live sensor adapters (Step 4),
-licence checks (Step 6), vision models inside packs (Step 7), rule sign-off records (Step 9).
+Signatures, a second equipment class, live sensor adapters, licence checks, vision models inside packs, and
+rule sign-off records.
