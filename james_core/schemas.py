@@ -116,7 +116,7 @@ class ProposedStep(Strict):
     text: str
     evidence_ids: tuple[str, ...] = ()     # uncited steps are blocked by EVID-01
     touches: tuple[str, ...] = ()          # hazard tags, e.g. "coupling_guard"
-    source_step: str = ""                  # the numbered manual step it is, e.g. "6.3 step 2, p. 5"
+    source_step: str = ""                  # the numbered manual step it is, e.g. "6.3 step 2, p. 5" (iteration 3, item G)
 
 
 class Proposal(Strict):

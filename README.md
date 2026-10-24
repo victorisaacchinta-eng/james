@@ -75,7 +75,7 @@ any step that is unsafe. Everything runs on the laptop: local model, local searc
 <tr>
 <td valign="top">
 
-**Status bar**<br>
+**Honest status bar**<br>
 <sub>The top bar always shows which backend is live (model or rules, BM25 or BM25 + Qdrant), so nothing is overstated.</sub>
 
 </td>
@@ -110,7 +110,7 @@ guessing. Every logged event is **hash-chained**: `python -m tools.verify_ledger
 unlinked or removed event, and each repair record ends with the chain head, which `--expect SEQ:HASH` checks later.
 Details, limits and sources: `docs/ITERATIONS.md`, iteration 10.
 
-## ◆ ATLAS: where each step lands on the machine
+## ◆ ATLAS: where, not just what
 
 <p align="center">
   <img src="assets/readme/atlas.png" width="100%" alt="ATLAS: an exploded line drawing of pump P-3 next to the task card. The coupling guard is red because WARDEN is blocking step 4 until lockout and zero energy are confirmed.">

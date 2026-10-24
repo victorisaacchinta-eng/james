@@ -1,4 +1,4 @@
-"""Confirmation scope, departure policy, FOREMAN decision origins and budgets,
+"""Iteration 3, sections 4A to 4E: confirmation scope, departure policy, FOREMAN decision origins and budgets,
 and transport-level egress (redirects, pinned model endpoint, what the maintenance app actually tried to reach)."""
 import time
 
@@ -21,7 +21,7 @@ def _j(monkeypatch):
     return JM, j, ran
 
 
-# every uncertain action is confirmed; the yes is scoped
+# ---- 4A: every uncertain action is confirmed; the yes is scoped ----
 
 @pytest.mark.parametrize("text", ["Open safari.", "Play Despacito on Spotify.", "Next track.", "Identify this."])
 def test_low_confidence_valid_app_or_media_still_asks(monkeypatch, text):
@@ -66,7 +66,7 @@ def test_a_new_task_voids_the_pending_yes(monkeypatch):
     assert j.pending is None
 
 
-# stepping away does not silently run the command
+# ---- 4I: stepping away does not silently run the command ----
 
 def test_departure_needs_a_yes(monkeypatch):
     JM, j, ran = _j(monkeypatch)
@@ -94,7 +94,7 @@ def test_departure_flag_is_set_by_the_hand_leaving(monkeypatch):
     assert j._departed
 
 
-# who decided each round; the whole loop is bounded
+# ---- 4B, 4D: who decided each round; the whole loop is bounded ----
 
 @pytest.fixture
 def manual():
@@ -237,7 +237,7 @@ def test_result_for_an_ended_job_is_ignored():
     assert a.plan is None and any(e["kind"] == "investigation_ignored" for e in a.ledger.events(old))
 
 
-# transport
+# ---- 4E: transport ----
 
 def test_redirects_are_checked(monkeypatch):
     import urllib.request
@@ -270,7 +270,7 @@ def test_maintenance_run_only_ever_tries_the_local_model(monkeypatch, net_attemp
     assert {(h, p) for h, p, *_ in net_attempts} <= {("localhost", 11434), ("127.0.0.1", 11434), ("::1", 11434)}
 
 
-# the send contract
+# ---- 4F: the send contract ----
 
 def _chrome(monkeypatch, listing, click="sent"):
     import subprocess

@@ -53,7 +53,7 @@ def policy(g, step):
     return next(s["policy"] for s in g["steps"] if s["step_id"] == step)
 
 
-# A01-A05: evidence
+# ---------- A01-A05: evidence ----------
 
 def test_A01_same_seed_same_bytes_and_same_analysis(tmp_path):
     assert fixtures.build() == fixtures.build()
@@ -134,7 +134,7 @@ def test_unit_mismatch_between_site_and_pack_is_rejected(lab):
         validate("abnormal.csv", (settings.SENSORS / "abnormal.csv").read_bytes(), meta, lab.pack_units())
 
 
-# A06-A07: guidance
+# ---------- A06-A07: guidance ----------
 
 def test_A06_every_step_resolves_to_a_versioned_section(client):
     _, _, g = start(client)
@@ -152,7 +152,7 @@ def test_A07_unsupported_question_or_asset_escalates_without_steps(client, asset
     assert g["proposal"]["steps"] == [] and g["proposal"]["escalate"] is True
 
 
-# A08-A11: WARDEN, scope, idempotency, meanings
+# ---------- A08-A11: WARDEN, scope, idempotency, meanings ----------
 
 def test_A08_dependent_step_is_refused_and_the_reason_recorded(client):
     jid, _, g = start(client)
@@ -206,7 +206,7 @@ def test_A11_acknowledging_is_not_reporting_work(client):
     assert report(client, jid, pid, "PV-04", result="skipped").status_code == 200   # a skip needs no acknowledgement
 
 
-# A12-A14: persistence, reviewed memory, export
+# ---------- A12-A14: persistence, reviewed memory, export ----------
 
 def test_A12_restart_keeps_everything(tmp_path):
     from fastapi.testclient import TestClient
@@ -266,7 +266,7 @@ def test_A14_export_keeps_sources_label_policy_and_outcome(client):
     assert js["label"] == settings.SYNTHETIC_LABEL and js["proposals"] and js["prerequisite_records"]
 
 
-# A15-A18: AI mode, validation, injection, offline
+# ---------- A15-A18: AI mode, validation, injection, offline ----------
 
 def test_A15_local_model_unavailable_is_an_honest_error(client, monkeypatch):
     monkeypatch.setattr(settings, "OLLAMA_URL", "http://127.0.0.1:9")
@@ -330,7 +330,7 @@ def test_A18_fixture_workflow_makes_no_network_calls(client, monkeypatch):
     assert start(client)[2]["proposal"]["recommended_history"][0]["job_id"] == jid
 
 
-# structural guarantees
+# ---------- structural guarantees ----------
 
 def test_ledger_tables_are_append_only(lab):
     jid = lab.create_job("abnormal", "DEMO-PUMP-03", Q)["job"]["job_id"]

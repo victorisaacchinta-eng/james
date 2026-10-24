@@ -10,7 +10,7 @@ Gesture ownership: while a task is running (framing, identifying, asking for the
 listening, searching, or showing a result), an open palm does NOT open the launcher. The task
 shows its own pinchable actions on the right (Talk, Cancel, Open result, Done) instead.
 
-Drawn in the JAMES Spatial Interface Language (jsil.py).
+Drawn in the JAMES Spatial Interface Language (jsil.py). Every value shown is measured or returned.
 
 Voice (push-to-talk): show the V sign to start listening, keep talking while you hold it, then close
 your hand into a fist to stop and run the command. Open palm while listening cancels. The voice window
@@ -158,7 +158,7 @@ class James:
         self._dock: list[Button] = []
         self.voice: dict | None = None             # the voice context window: listening, heard, plan steps
         self.voice_block_until = 0.0
-        self.pending: dict | None = None            # a low-confidence plan waiting for 'yes'
+        self.pending: dict | None = None            # a low-confidence plan waiting for 'yes' (iteration 2, P0-A)
         self.typing: str | None = None              # typed command in progress ('/' key), None when not typing
         self.owner_epoch = None                     # which hand-takeover is in control (owner.KeyFilter.epoch)
         self.owner_status = ""
@@ -186,7 +186,7 @@ class James:
         self.ctx: dict = {}                         # what the last commands did, so the next one can refer to it:
                                                     # app (name), search (site, query, top), chat, contact
 
-    # helpers
+    # ---------- helpers ----------
     @property
     def busy(self) -> bool:
         """A task owns the screen: the launcher gesture is off until it ends."""
@@ -217,7 +217,7 @@ class James:
         self.event(why)
         self.write(f"TASK_END {why}")
 
-    # actions
+    # ---------- actions ----------
     def press(self, key: str, frame=None):
         if key != "voice_toggle" and self.pending:                # a new task voids a waiting 'yes'
             self.pending = None
@@ -288,7 +288,7 @@ class James:
             self.event(f"{app.label} opened")
             self.write(f"OPEN {app.id} {app.how} {app.where}")
 
-    # ATLAS (an app inside JAMES)
+    # ---------- ATLAS (an app inside JAMES) ----------
     def atlas_on(self) -> bool:
         return self.atlas is not None and self.atlas.active
 
@@ -359,7 +359,7 @@ class James:
             self.atlas.key("tab" if k == 9 else c, now)
         return None
 
-    # CANTUS (the rhythm game, an app inside JAMES)
+    # ---------- CANTUS (the rhythm game, an app inside JAMES) ----------
     def cantus_on(self) -> bool:
         return self.cantus is not None and self.cantus.active
 
@@ -482,7 +482,7 @@ class James:
 
     def set_owner(self, status: str, epoch):
         """Called every frame with the owner filter's state. If ANOTHER hand takes control while a command is
-        being recorded, the recording is dropped. The owner stepping out of view is
+        being recorded, the recording is dropped (iteration 2, P1-B / ST-14). The owner stepping out of view is
         not a change: a command they finished still runs (hand gone 2 s stops and runs it; control is held 4 s)."""
         prev, self.owner_epoch, self.owner_status = self.owner_epoch, epoch, status
         if prev is None or epoch == prev or status != "owner":
@@ -513,7 +513,7 @@ class James:
     def talker_on(self) -> bool:
         return bool(getattr(self.talker, "enabled", False)) and not getattr(self.talker, "muted", False)
 
-    # typed commands: a disclosed fallback when the mic fails
+    # ---------- typed commands (iteration 2, P0-F: a disclosed fallback when the mic fails) ----------
     def start_typing(self):
         if self.s.locked:
             self.flash("Unlock first (U).", AMBER)
@@ -584,7 +584,7 @@ class James:
     def stop_listen(self, run=True, departed: bool = False):
         """Stop recording. run=True transcribes and runs the command; run=False discards it.
         departed=True: the hand left view (not a closed fist): the command is shown and needs a 'yes' first
-        (declared policy: no action runs on an accidental departure)."""
+        (iteration 3, item I: declared policy, no action runs on an accidental departure)."""
         if not self.rec.active:
             return
         self._departed = bool(run and departed)
@@ -634,7 +634,7 @@ class James:
         for why_not in dropped:
             self.write(f"GUARD {why_not}")
         neg = C.negated_kinds(txt)
-        if neg and not steps:                                 # "Do not send it.": nothing to plan
+        if neg and not steps:                                 # "Do not send it." (ST-02): nothing to plan
             self.s.mode = before
             verb = sorted(neg)[0]
             self.voice_step(f"Understood. Not going to {verb} anything.", "ok")
@@ -653,7 +653,7 @@ class James:
             return
         departed, self._departed = getattr(self, "_departed", False), False
         if steps and (conf < 0.5 or departed) and not C.immediate_ok(steps):
-            self.s.mode = before                                   # every uncertain action is confirmed
+            self.s.mode = before                                   # iteration 3: every uncertain action is confirmed
             self.ask_confirm(txt, conf, steps, "you stepped away before closing your hand" if departed and conf >= 0.5
                              else "")
             return
@@ -683,7 +683,7 @@ class James:
             self.search(model)
             return
         self.s.mode = before
-        if conf < 0.5:                                         # "I'll leave." 0.33: noise, not a command
+        if conf < 0.5:                                         # log 00:32:48 "I'll leave." 0.33: noise, not a command
             self.voice_step("Sorry, I didn't catch that. Try again, a little closer to the mic.", "fail")
             self.flash("Didn't catch that clearly. Show the V sign and say it again.", AMBER, 4)
             return
@@ -698,7 +698,7 @@ class James:
     YES_MIN_CONF = 0.4                                  # a 'yes' heard less clearly than this is not a yes
 
     def _pending(self, what: dict) -> dict:
-        """A confirmation is only valid for this owner, this screen and 12 seconds."""
+        """A confirmation is only valid for this owner, this screen and 12 seconds (iteration 3, item A)."""
         return {**what, "until": time.monotonic() + self.CONFIRM_S, "epoch": self.owner_epoch,
                 "mode": getattr(self, "_before_listen", "READY")}
 
@@ -750,7 +750,7 @@ class James:
         return True
 
     def report_leftovers(self, txt: str, steps: list):
-        """Say which part of the request no step covers, instead of letting a partial plan look complete."""
+        """Say which part of the request no step covers, instead of letting a partial plan look complete (ST-03)."""
         for part in C.leftovers(txt, steps):
             self.write(f"NOT_DONE {part!r}")
             self.voice_step(f"Not done: \"{part}\". I can't do that part yet.", "fail")
@@ -767,7 +767,7 @@ class James:
             if n is not None and n <= len(self.s.problems):
                 self.s.mode = before
                 title = self.s.problems[n - 1]["title"]
-                if conf < 0.5:                                  # heard unclearly: confirm before acting
+                if conf < 0.5:                                  # heard unclearly: confirm before acting (P0-A)
                     self.pending = self._pending({"fn": lambda: self.choose(n - 1), "txt": txt})
                     self.write(f"LOWCONF {conf:.2f} waiting for yes: problem {n}")
                     self.voice_step(f"Problem {n}, {title}? Say yes, or no.", "running")
@@ -837,7 +837,7 @@ class James:
             self.speak(self.status_line(), True)
         self.write(f"FIXNAV {action}")
 
-    # voice plan
+    # ---------- voice plan ----------
     def speak(self, text: str, interrupt: bool = False):
         """JAMES says it out loud, and the voice window shows it."""
         if not text:
@@ -926,7 +926,7 @@ class James:
                 if st.service in media.SEND_JS and getattr(config, "ASK_AUTO_SEND", False):
                     j = self.voice_step(f"Press send in {name}", detail="waiting for the page")
                     threading.Thread(target=self._send, args=(j, st.service, st.arg, 10.0), daemon=True).start()
-                elif st.service in media.SEND_JS:                   # filled, not sent
+                elif st.service in media.SEND_JS:                   # iteration 2 P0-C: filled, not sent
                     self.voice_step(f"Your prompt is ready in {name}. Say 'send it', or press Enter.", "ok")
             elif st.kind == "send":
                 who = st.service or self.last_chat
@@ -1128,8 +1128,8 @@ class James:
         return bool(LA.find_app(spoken, self.installed) or C.WEB_APPS.get(q) or C.WEB_APPS.get(LA.said_name(spoken)))
 
     def open_in_browser(self, name: str, browser: str):
-        """'Open ChatGPT on Chrome': the website in that browser, never the desktop app. A name
-        with no known site becomes a web search in that browser, and JAMES says so ('IMDB')."""
+        """'Open ChatGPT on Chrome': the website in that browser, never the desktop app (live 04:21:34). A name
+        with no known site becomes a web search in that browser, and JAMES says so (live 04:23:26 'IMDB')."""
         url, how = C.web_target(name)
         where = self.browser_where(browser)
         short = browser.replace("Google ", "").replace(" Browser", "")
@@ -1155,7 +1155,7 @@ class James:
             self.installed = LA.installed_apps()
             found = LA.find_app(spoken, self.installed)
         web = C.WEB_APPS.get(q) or C.WEB_APPS.get(LA.said_name(spoken))
-        if found is None and web:                              # no Instagram app -> instagram.com
+        if found is None and web:                              # log 01:36:24: no Instagram app -> instagram.com
             LA.open_url(web)
             self.flash(f"Opening {LA.said_name(spoken).title()} in the browser", GREEN)
             self.write(f"OPEN_WEB {spoken!r} -> {web}")
@@ -1168,7 +1168,7 @@ class James:
             self.write(f"OPEN_WEB {spoken!r} -> {url} (domain)")
             return True, f"{dom} opened in the browser"
         if found is None:
-            name = LA.said_name(spoken)                        # name only the app part, not the sentence
+            name = LA.said_name(spoken)                        # log 01:12:09: name only the app part, not the sentence
             self.flash(f'No app called "{name}" on this computer', RED, 4)
             self.write(f"OPEN_BY_NAME no match for {spoken!r} (cleaned {q!r})")
             return False, f'no app called "{name}" found'
@@ -1185,7 +1185,7 @@ class James:
             return True, f"{name} opened; request copied (Cmd+V)"
         return True, f"{name} opened"
 
-    # problems -> fixes
+    # ---------- problems -> fixes ----------
     def choose(self, i: int):
         """Pinched problem i: ask for its fix steps (local model, text only; built-in guide if it is down)."""
         s = self.s
@@ -1245,7 +1245,7 @@ class James:
         self.event("Result opened in the browser")
         self.write(f"OPEN_URL {url}")
 
-    # universal display (phones)
+    # ---------- universal display (phones) ----------
     def is_phone(self) -> bool:
         r = self.s.result or {}
         return bool(PHONE_WORDS.search(" ".join(str(r.get(k) or "") for k in ("object", "brand", "model"))
@@ -1256,7 +1256,7 @@ class James:
         r = self.s.result or {}
         return (self.s.model_text or str(r.get("model") or "")).strip()
 
-    # task actions (right side, pinchable, replace the launcher while a task runs)
+    # ---------- task actions (right side, pinchable, replace the launcher while a task runs) ----------
     def task_actions(self) -> list[Button]:
         m = self.s.mode
         acts = {
@@ -1280,7 +1280,7 @@ class James:
             acts = acts[:-1] + [("ud_display", "Displays"), ("ud_glass", "Glass")] + acts[-1:]
         return [Button(k, l) for k, l in acts]
 
-    # radial launcher
+    # ---------- radial launcher ----------
     def launcher_actions(self) -> list[Button]:
         return [Button("identify", "Identify"), Button("talk", "Talk")]
 
@@ -1328,7 +1328,7 @@ class James:
                 return b.key
         return None
 
-    # drawing: pieces
+    # ---------- drawing: pieces ----------
     @staticmethod
     def glyph(img, key, x, y, col):
         """Small geometric glyph per action (no decorative icons)."""
@@ -1414,7 +1414,7 @@ class James:
         if state == "confirming" and progress > 0:
             cv2.rectangle(img, (x + 2, y + h - 4), (x + 2 + int((w - 4) * min(1, progress)), y + h - 2), J.CONFIRM, -1)
 
-    # problems / fix steps panel (pinchable rows, middle)
+    # ---------- problems / fix steps panel (pinchable rows, middle) ----------
     def choice_box(self, W, H) -> tuple[int, int, int, int]:
         """x, y, w, max_h of the panel: right of the context card and snapshot, left of the task actions."""
         cw = min(460, max(360, int(W * 0.33)))
@@ -1646,7 +1646,7 @@ class James:
             yy += rh
         return h
 
-    # voice context window (bottom centre)
+    # ---------- voice context window (bottom centre) ----------
     def draw_voice(self, img):
         v = self.voice
         if not v:
@@ -1767,7 +1767,7 @@ class James:
             c = tuple(int(v) for v in a + (b - a) * 0.36)
             cv2.circle(img, c, 14, J.CYAN, 2, cv2.LINE_AA)                     # where the ring is sampled
 
-    # queue
+    # ---------- queue ----------
     def drain(self):
         while not self.q.empty():
             kind, *a = self.q.get()
@@ -1862,7 +1862,7 @@ class James:
                     self.voice_step(a[0], "fail")
                 self.flash(a[0], RED, 5)
 
-    # drawing: frame
+    # ---------- drawing: frame ----------
     def draw(self, img, lens, hover_key, progress):
         H, W = img.shape[:2]
         s = self.s
@@ -2045,7 +2045,7 @@ def pick_number(txt: str) -> int | None:
 
 
 def wrong_key_hint(lens) -> str | None:
-    """Key mode, no key seen, but another ArUco marker is: say which one it is (the
+    """Key mode, no key seen, but another ArUco marker is: say which one it is (log 2026-09-26 00:31: the
     pump tag P-3, id 3, was held up as the key)."""
     if getattr(lens, "owner_kind", "") != "key" or getattr(lens, "keys", None) or not getattr(lens, "tags", None):
         return None

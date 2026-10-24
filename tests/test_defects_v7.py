@@ -10,7 +10,7 @@ from test_talk import _james, _problems_screen
 DAY = datetime.date(2026, 9, 26)
 
 
-# 1. low-confidence commands
+# ---- 1. low-confidence commands ----
 
 def _run(monkeypatch, text, conf, installed=("Safari", "Google Chrome")):
     JM, j = _james(monkeypatch)
@@ -24,7 +24,7 @@ def _run(monkeypatch, text, conf, installed=("Safari", "Google Chrome")):
 
 
 def test_misheard_sentence_below_half_confidence_does_not_run(monkeypatch):
-    j, ran = _run(monkeypatch, "Open the KPDR search for a go-by request.", 0.43)
+    j, ran = _run(monkeypatch, "Open the KPDR search for a go-by request.", 0.43)      # log 02:00:39
     assert ran == [] and j.talker.said[-1].startswith("I may have misheard") and j.pending
 
 
@@ -56,10 +56,10 @@ def test_sure_enough_rules():                                        # kept for 
     assert not C.sure_enough(C.plan("open safari"), lambda name: False)
 
 
-# 2. collect query cleanup
+# ---- 2. collect query cleanup ----
 
 def test_ranking_words_with_commas_and_a_time_window():
-    assert C.clean_search("the top, month, repos", "github", DAY) == "created:>2026-08-27"
+    assert C.clean_search("the top, month, repos", "github", DAY) == "created:>2026-08-27"   # log 01:59:29
     assert C.clean_search("iot repos this month", "github", DAY) == "iot created:>2026-08-27"
     assert C.clean_search("top weekly python repos", "github", DAY) == "python created:>2026-09-19"
     assert C.clean_search("the top best repos for iot and hardware", "github", DAY) == "iot and hardware"
@@ -77,7 +77,7 @@ def test_collect_from_the_live_log_keeps_the_time_window():
     assert [(s.kind, s.arg) for s in st] == [("collect", "rag")]
 
 
-# 4. spoken grammar
+# ---- 4. spoken grammar ----
 
 def test_chosen_problem_sign_reads_naturally():
     said = T.chosen({"title": "Screen cracks", "sign": "Users notice cracks or chips on the display"})
@@ -97,7 +97,7 @@ def test_voice_pick_reads_the_sign(monkeypatch):
     assert "notice" not in j.talker.said[-1] and "The usual sign:" in j.talker.said[-1]
 
 
-# 5. microphone: PortAudio restarted once
+# ---- 5. microphone: PortAudio restarted once ----
 
 class _FakeSD:
     def __init__(self, fail_times):
@@ -152,7 +152,7 @@ def test_mic_failure_leaves_recorder_inactive(monkeypatch):
     assert r.stop().size == 0 and isinstance(r.stop(), np.ndarray)
 
 
-# 8. greeting after midnight
+# ---- 8. greeting after midnight ----
 
 def test_greeting_by_hour():
     assert T.greeting("sir", 2) == "Working late, sir? All systems are online."
@@ -172,5 +172,5 @@ def test_time_window_is_read_out_in_words():
 
 
 def test_live_github_search_line_is_unchanged():
-    st = C.plan("Open GitHub and search for top repositories for IoT and hardware-based projects.")
+    st = C.plan("Open GitHub and search for top repositories for IoT and hardware-based projects.")   # log 01:08:03
     assert [(s.kind, s.arg, s.top) for s in st] == [("search", "iot and hardware-based projects", True)]

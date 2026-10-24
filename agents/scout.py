@@ -16,7 +16,7 @@ UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, 
 def query_for(part: str | None, brand: str | None, model: str | None, problem: str | None = None,
               obj: str | None = None) -> str:
     """The text-only web query. A part if the fix needs one, else how to fix the chosen problem.
-    (The old default assumed 'replacement screen glass' for a water bottle.)"""
+    (Log 2026-09-25 21:26: the old default assumed 'replacement screen glass' for a water bottle.)"""
     model = (model or "").strip()
     name = model if not brand or brand.lower() in model.lower() else f"{brand} {model}".strip()
     name = name or (obj or "").strip()

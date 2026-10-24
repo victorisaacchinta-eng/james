@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parent
 BRANDING = ROOT / "assets" / "branding"
 
 
-# colour tokens (BGR for OpenCV)
+# ---------- colour tokens (BGR for OpenCV) ----------
 def hex_bgr(h: str) -> tuple[int, int, int]:
     h = h.lstrip("#")
     return int(h[4:6], 16), int(h[2:4], 16), int(h[0:2], 16)
@@ -53,7 +53,7 @@ LOCKED = hex_bgr("#6E7F91")         # muted blue-grey
 SPACE = (4, 8, 12, 16, 24, 32, 48, 64)
 S1, S2, S3, S4, S6, S8 = 4, 8, 12, 16, 24, 32
 
-# type
+# ---------- type ----------
 _SANS = ["/System/Library/Fonts/SFNS.ttf", "/Library/Fonts/Inter-Regular.ttf",
          os.path.expanduser("~/Library/Fonts/Inter-Regular.ttf"), "/usr/share/fonts/opentype/inter/Inter-Regular.otf",
          "/System/Library/Fonts/Helvetica.ttc", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"]
@@ -196,7 +196,7 @@ def fit(s: str, width: int, size=15, kind="sans") -> str:
     return s.rstrip() + "..."
 
 
-# surfaces
+# ---------- surfaces ----------
 def panel(img, x, y, w, h, alpha=0.84, fill=SURFACE, border=RULE, accent=None, highlight=True):
     """Dark translucent instrument surface: fill, 1 px border, faint inner top highlight,
     optional 2 px state accent on the left edge. Near-square corners by design."""
@@ -266,7 +266,7 @@ def dot(img, x, y, color, r=3):
     cv2.circle(img, (int(x), int(y)), r, color, -1, cv2.LINE_AA)
 
 
-# the JAMES mark
+# ---------- the JAMES mark ----------
 @lru_cache(maxsize=16)
 def mark(size: int) -> np.ndarray:
     """The emblem as crisp flat geometry (BGRA), for runtime sizes. The raster logo in
@@ -331,7 +331,7 @@ def splash(img, t_since_start: float, hold=1.1, fade=0.5) -> bool:
     return True
 
 
-# header (static chrome cached per window size)
+# ---------- header (static chrome cached per window size) ----------
 class Header:
     """Top-left: [mark] JAMES + expansion. The chrome is rendered once per size and composited."""
     H = 52
@@ -386,7 +386,7 @@ def status_right(img, items, y=31, right=None):
     return x
 
 
-# spatial cursor and target geometry (cv2: JSIL section 42)
+# ---------- spatial cursor and target geometry (cv2: JSIL section 42) ----------
 CURSOR_COLORS = {"TRACKING": TEXT_2, "TARGETABLE": CYAN_SOFT, "TARGETED": CYAN, "CONFIRMING": CONFIRM,
                  "SELECTED": SUCCESS, "ERROR": ERROR, "LOCKED": LOCKED}
 
@@ -465,7 +465,7 @@ def sight(img, st):
     text(img, "HAND LOST", x + r + S2, y + 4, 10, CONFIRM, "semi", track=0.8)
 
 
-# cached layers (JSIL section 41)
+# ---------- cached layers (JSIL section 41) ----------
 class LayerCache:
     """Draws content once, keeps it as colour + alpha, and composites it each frame.
 
@@ -494,7 +494,7 @@ class LayerCache:
         return y + a.shape[0]
 
 
-# real telemetry
+# ---------- real telemetry ----------
 class FrameTimer:
     """Measured, never estimated: frame intervals, per-stage times, p50/p95/p99/max,
     this process's CPU share and peak memory."""

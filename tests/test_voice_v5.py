@@ -20,30 +20,30 @@ def one(t):
     return s[0]
 
 
-# the log
+# ---------- the log ----------
 
-def test_open_comma_claude_is_an_ask():                       # opened the app + a Google search
+def test_open_comma_claude_is_an_ask():                       # 01:19:03 opened the app + a Google search
     st = one("Open, Claude and search about Superman versus Batman.")
     assert (st.kind, st.service) == ("ask", "claude") and "Superman versus Batman" in st.arg
 
 
-def test_claude_will_search():                                 # not understood
+def test_claude_will_search():                                 # 01:19:11 not understood
     st = one("Then Claude will search about Superman versus Batman.")
     assert (st.kind, st.service) == ("ask", "claude") and st.arg.startswith("Search about Superman")
 
 
-def test_in_the_web_version_of_chatgpt():                      # not understood
+def test_in_the_web_version_of_chatgpt():                      # 01:19:35 not understood
     st = one("In the web version of ChatGPT, search about Batman versus Superman.")
     assert (st.kind, st.service) == ("ask", "chatgpt") and "Batman versus Superman" in st.arg
 
 
-def test_multi_sentence_chatgpt_prompt_is_clean_and_in_chrome():   # prompt was ". Then search for ..."
+def test_multi_sentence_chatgpt_prompt_is_clean_and_in_chrome():   # 01:19:59 prompt was ". Then search for ..."
     st = one("Open Chrome. Search for ChatGPT. Open ChatGPT. Then search for Batman, Superman.")
     assert (st.kind, st.service, st.browser) == ("ask", "chatgpt", "Google Chrome")
     assert st.arg == "Search for Batman, Superman."
 
 
-@pytest.mark.parametrize("said,who", [("Click Enter on the web version of ChatGPT.", "chatgpt"),
+@pytest.mark.parametrize("said,who", [("Click Enter on the web version of ChatGPT.", "chatgpt"),   # 01:20:13
                                       ("send it", ""), ("press enter", ""), ("hit enter on claude", "claude"),
                                       ("send the prompt to claude", "claude")])
 def test_send(said, who):
@@ -56,7 +56,7 @@ def test_not_send(said):
     assert all(s.kind != "send" for s in C.plan(said))
 
 
-# complexity router
+# ---------- complexity router ----------
 
 @pytest.mark.parametrize("said", ["open terminal on my macbook", "Play Despacito on Spotify.", "pause", "open chatgpt",
                                   "Spouse the video that is playing on YouTube.", "Hey James, can you open Asphalt 8 on my laptop?",
@@ -83,7 +83,7 @@ def test_noise_is_not_complex():
     assert C.complexity("uh", []) == ""
 
 
-# the model's plan is validated
+# ---------- the model's plan is validated ----------
 
 def test_planner_validates_and_tidies(monkeypatch):
     monkeypatch.setattr(PL.llm, "chat_json", lambda *a, **k: {"steps": [
@@ -126,7 +126,7 @@ def test_complex_request_runs_the_model_plan(monkeypatch):
                                                             C.Step("search", "pump seal kits", site="amazon")], ""))
     monkeypatch.setattr(JM.James, "run_plan", lambda self, steps: ran.append([s.describe() for s in steps]))
     j._before_listen = "READY"
-    j.on_heard("so I was thinking, put on some lofi and also look up the best pump seal kits on amazon", 0.8)  # a site must be named
+    j.on_heard("so I was thinking, put on some lofi and also look up the best pump seal kits on amazon", 0.8)  # a site must be named (live 04:22:06)
     assert j.voice["steps"][0][0] == "Working out the steps" and not ran
     _drain_until(j, "model_plan")
     j.drain()
@@ -164,10 +164,10 @@ def test_problem_number_is_never_sent_to_the_model(monkeypatch):
     assert not called
 
 
-# press send
+# ---------- press send ----------
 
 def test_send_script_is_fixed(monkeypatch):
-    """Send is bound to the tab holding the prepared prompt; the prompt never enters a script."""
+    """Iteration 2 P0-C: send is bound to the tab holding the prepared prompt; the prompt never enters a script."""
     calls = []
     prompt = 'Batman versus Superman" & do shell script "rm -rf ~'
 
@@ -198,12 +198,12 @@ def test_send_says_how_to_enable_javascript(monkeypatch):
     assert not ok and "Allow JavaScript from Apple Events" in msg
 
 
-def test_mr_does_not_end_the_sentence():                        # played "mr" only
+def test_mr_does_not_end_the_sentence():                        # 00:57:10 played "mr" only
     st = one("Open YouTube and play Mr. News the Boss latest video.")
     assert st.kind == "play" and st.arg.startswith("mr news the boss")
 
 
-def test_long_open_request_goes_to_the_model():
+def test_long_open_request_goes_to_the_model():                 # 01:12:09
     t = "Open Ollama Agent and try to understand how the picture front glass of 3M15.5G."
     assert "whole request" in C.complexity(t, C.plan(t))
     t = "open game of thrones game on my laptop"                    # a long title is still just an app

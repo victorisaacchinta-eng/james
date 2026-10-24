@@ -1,4 +1,4 @@
-"""Print the CURRENT markers, labelled. Reprint after any marker change.
+"""Print the CURRENT markers, labelled (iteration 2, P1-C). Reprint after any marker change.
 
     python -m tools.make_marker_sheet
 

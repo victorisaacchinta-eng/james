@@ -18,7 +18,7 @@ def _j(monkeypatch):
     return JM, j, opened, launched, lines
 
 
-# 'Open ChatGPT on Chrome.' launched the ChatGPT desktop app
+# ---- 04:21:34 'Open ChatGPT on Chrome.' launched the ChatGPT desktop app ----
 
 def test_open_x_on_chrome_is_parsed_as_the_website_in_chrome():
     assert [(s.kind, s.arg, s.browser) for s in C.plan("Open ChatGPT on Chrome.")] == [("open", "chatgpt", "Google Chrome")]
@@ -38,7 +38,7 @@ def test_open_netflix_on_chrome_still_opens_the_website_in_chrome(monkeypatch):
     assert opened == [("https://www.netflix.com/", "/Applications/Google Chrome.app")]
 
 
-# 'Open IMDB on Chrome.' -> 'no app called imdb' (after saying 'Opening imdb on chrome')
+# ---- 04:23:26 'Open IMDB on Chrome.' -> 'no app called imdb' (after saying 'Opening imdb on chrome') ----
 
 def test_open_imdb_on_chrome_opens_imdb(monkeypatch):
     JM, j, opened, launched, lines = _j(monkeypatch)
@@ -67,7 +67,7 @@ def test_low_confidence_open_on_chrome_runs_only_for_a_known_site():
     assert not C.sure_enough(C.plan("open blue harbour tiles on chrome"), no)       # would be a search: confirm first
 
 
-# 'Open IMDB on Chrome and list ... in the Notes app' became an Amazon search
+# ---- 04:22:06 and 04:24:02: 'Open IMDB on Chrome and list ... in the Notes app' became an Amazon search ----
 
 IMDB_1 = ("Open IMDB on Chrome and list out the top 10 grossing movies and buys the names of the top 10 grossing "
           "movies in the Notes app.")
@@ -106,7 +106,7 @@ def test_the_notes_part_of_a_request_is_reported_when_no_step_does_it():
     assert C.leftovers("open the notes app", C.plan("open the notes app")) == []
 
 
-# identify: brand came back as the string 'null'; fix: 'Go to Device Manager' on a Mac
+# ---- 04:20:42 identify: brand came back as the string 'null'; 04:21:11 fix: 'Go to Device Manager' on a Mac ----
 
 def test_null_strings_from_the_model_become_none(monkeypatch):
     import numpy as np
@@ -127,7 +127,7 @@ def test_fix_steps_are_asked_for_the_mac(monkeypatch):
     assert "Mac" in asked[0] and "Device Manager" in asked[0]
 
 
-# 'TALK slow start: 2.7 s': a 104-character first sentence
+# ---- 04:21:14 'TALK slow start: 2.7 s': a 104-character first sentence ----
 
 def test_a_long_first_sentence_is_split_at_a_comma_for_a_quicker_first_word():
     s = T.sentences("Wireless mice often disconnect due to low battery, interference from other devices, or outdated "

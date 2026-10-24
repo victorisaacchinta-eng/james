@@ -1,4 +1,4 @@
-"""SIGHT (tracking quality), ARM TIME (fatigue nudge) and the pinch guards (fist latch, reach).
+"""Iteration 10: SIGHT (tracking quality), ARM TIME (fatigue nudge) and the pinch guards (fist latch, reach).
 All camera-free: synthetic hands from tests/hands.py and synthetic times."""
 import numpy as np
 import pytest
@@ -7,7 +7,7 @@ from tests.hands import FIST, OPEN, hand
 import owner as OW
 
 
-# SIGHT
+# ---------- SIGHT ----------
 
 def test_brightness_is_cheap_and_correct():
     from james_core.sight import brightness
@@ -77,7 +77,7 @@ def test_sight_x_draws_and_never_raises():
     J.sight(img, SightState(lost_at=(1279, 719)))               # at the very edge: clipped, not an error
 
 
-# ARM TIME
+# ---------- ARM TIME ----------
 
 def test_arm_time_nudges_once_after_sustained_high_use_and_rearms_after_rest():
     from james_core.armtime import ArmTime
@@ -109,7 +109,7 @@ def test_arm_time_ignores_stalls_between_frames():
     assert rep.load <= 0.5 * 1.5 + 1e-9 and rep.up_s <= 0.5
 
 
-# pinch guards
+# ---------- pinch guards ----------
 
 def _lens():
     from agents.lens import Lens
@@ -180,7 +180,7 @@ def test_losing_the_hand_clears_the_guards():
     assert not L._fist_latch and L._pinch_palm is None and not L._reached
 
 
-# the step confirm (app.py) never fires on a reach
+# ---------- the step confirm (app.py) never fires on a reach ----------
 
 class _FakeApp:
     class session:
@@ -229,7 +229,7 @@ def test_arm_load_is_capped_so_recovery_is_bounded():
     assert a.load <= 45 * 1.5 + 1e-9
 
 
-# review round
+# ---------- review round (iteration 10) ----------
 
 def _curled_pinch():
     """Index half out (ratio about 1.25, which ATLAS accepts as a pinch), middle, ring and pinky tucked."""

@@ -58,7 +58,7 @@ class EgressGuard:
         return out
 
 
-# tool families: one gate for everything that leaves the laptop
+# ---------- tool families: one gate for everything that leaves the laptop (iteration 2, P0-D / ST-06) ----------
 # JAMES has two tool families that must not mix:
 #   consumer  (james.py)          web search, YouTube/GitHub text requests, opening web pages, AI chat pages.
 #                                 These SEND the words you say to that site (a prompt in a URL is sent when
@@ -128,7 +128,7 @@ def outbound() -> list[dict]:
         return list(_log)
 
 
-# transport: redirects are checked too
+# ---------- transport: redirects are checked too (iteration 3, item E) ----------
 import urllib.request as _ur
 
 

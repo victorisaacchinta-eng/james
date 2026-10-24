@@ -1,4 +1,4 @@
-"""Grounding edge cases, history dates and review order, and the pack snapshot
+"""Iteration 3, sections 4G and 4H: grounding edge cases, history dates and review order, and the pack snapshot
 used end to end with no file re-read."""
 import builtins
 import pathlib
@@ -86,7 +86,7 @@ def test_newest_review_wins_even_with_the_same_timestamp(monkeypatch):
 
 
 def test_investigation_never_rereads_pack_files(monkeypatch):
-    """After start-up every pack consumer uses the verified snapshot. Any open() of a pack file during a
+    """4H: after start-up every pack consumer uses the verified snapshot. Any open() of a pack file during a
     full investigation fails the test."""
     from app import App
     a = App(sim=True)

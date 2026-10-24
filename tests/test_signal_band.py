@@ -1,4 +1,4 @@
-"""The WARDEN blocked card is a signal panel (band, signal word, hazard stripes), red kept for state."""
+"""Iteration 10: the WARDEN blocked card is a signal panel (band, signal word, hazard stripes), red kept for state."""
 import numpy as np
 
 import jsil as J

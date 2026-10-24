@@ -1,4 +1,4 @@
-"""LEDGER recall: similar past jobs, senior-approved only, and only when they apply.
+"""LEDGER recall: similar past jobs, senior-approved only, and only when they apply (iteration 2, P1-D).
 
 A past job is offered as evidence only if all of these hold, and every job it skips is named in a note:
   * approved by a senior, and the approval has not been revoked

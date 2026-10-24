@@ -96,7 +96,7 @@ def parse(raw, hazard_tags: Optional[set] = None, class_id: Optional[str] = None
     return (None if problems else m), problems
 
 
-# geometry: shapes -> line segments (N, 2, 3)
+# ---------------- geometry: shapes -> line segments (N, 2, 3) ----------------
 
 def _place(local: np.ndarray, axis: str, at) -> np.ndarray:
     """local points are (a, u, v): a along the axis, u/v across it."""
@@ -156,7 +156,7 @@ def part_segments(p: Part) -> np.ndarray:
     return np.concatenate([shape_segments(s) for s in p.shapes]).astype(np.float32)
 
 
-# linking: manual step -> parts (deterministic, no AI)
+# ---------------- linking: manual step -> parts (deterministic, no AI) ----------------
 
 def _keyword_spans(model: Model, text: str) -> list[tuple[int, int, str]]:
     spans = []

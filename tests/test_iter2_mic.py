@@ -1,4 +1,4 @@
-"""The microphone is always released, errors are logged with the device, and a typed path exists."""
+"""Iteration 2 P0-F: the microphone is always released, errors are logged with the device, and a typed path exists."""
 import sys
 
 import numpy as np

@@ -20,7 +20,7 @@ SRC = PACKS_DIR / "pharma-utility"
 RECT = (508, 68, 756, 602)
 
 
-# the model in the pack
+# ---------------- the model in the pack ----------------
 
 @pytest.fixture
 def pack_dir(tmp_path):
@@ -106,7 +106,7 @@ def test_model_file_is_hash_checked_like_every_pack_file(pack_dir):
     assert "hash mismatch" in str(e.value)
 
 
-# step -> part (deterministic)
+# ---------------- step -> part (deterministic) ----------------
 
 @pytest.mark.parametrize("text,touches,expect", [
     ("Remove the coupling guard.", ("coupling_guard",), ["coupling_guard"]),      # not the coupling inside it
@@ -129,7 +129,7 @@ def test_a_shared_hazard_tag_narrows_to_the_part_the_step_names():
         "coupling", "shaft", "impeller"}
 
 
-# WARDEN preview
+# ---------------- WARDEN preview ----------------
 
 def make_atlas(**kw):
     a = Atlas(config.PACK.model(), load_policy(), **kw)
@@ -151,7 +151,7 @@ def test_preview_is_the_real_warden_verdict_for_that_part():
     assert a.preview("baseplate")[0] == "none"
 
 
-# gestures
+# ---------------- gestures ----------------
 
 def frame(a):
     img = np.full((720, 1280, 3), 70, np.uint8)
@@ -226,7 +226,7 @@ def test_blocked_step_part_is_drawn_red_and_allowed_step_part_amber():
     assert colour_pixels(a, J.CONFIRM) > 200
 
 
-# inside the app: ATLAS never confirms
+# ---------------- inside the app: ATLAS never confirms ----------------
 
 @pytest.fixture
 def app_at_step():

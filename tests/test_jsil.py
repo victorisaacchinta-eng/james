@@ -108,7 +108,7 @@ def test_no_iron_man_or_jarvis_branding_in_the_ui():
             assert bad not in t, (f, bad)
 
 
-# launcher: allowlist, per-OS resolution, gesture ownership
+# ---------- launcher: allowlist, per-OS resolution, gesture ownership ----------
 
 def _james(monkeypatch):
     import sys, types
@@ -209,7 +209,7 @@ def test_only_allowlisted_targets_can_open(monkeypatch):
     assert opened == [first.id]
 
 
-# voice: open any installed app (launch-only)
+# ---------- voice: open any installed app (launch-only) ----------
 
 def _fake_mac(tmp_path, names):
     for n in names:

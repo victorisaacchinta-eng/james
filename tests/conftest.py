@@ -40,7 +40,7 @@ def _no_neural_voice(monkeypatch):
 @pytest.fixture(autouse=True)
 def net_attempts(monkeypatch):
     """No test may use the network. Every attempted connection is refused and recorded (host, port), so a
-    test can also assert what JAMES TRIED to reach (a network-observed check)."""
+    test can also assert what JAMES TRIED to reach (iteration 3, item E: a network-observed check)."""
     import socket
     tried = []
 

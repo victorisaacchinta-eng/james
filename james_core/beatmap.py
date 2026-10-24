@@ -75,7 +75,7 @@ class Chart:
                    d.get("audio", ""), blocks, d.get("note", ""))
 
 
-# placement (shared by both sources)
+# ---------------- placement (shared by both sources) ----------------
 
 def place(events: list[dict], difficulty: str = "normal", lead: float = 1.0) -> list[Block]:
     """events: [{t, strength 0..1, height 0..1}] -> playable blocks. Deterministic."""
@@ -119,7 +119,7 @@ def place(events: list[dict], difficulty: str = "normal", lead: float = 1.0) -> 
     return blocks
 
 
-# built-in songs
+# ---------------- built-in songs ----------------
 
 def events_from_notes(notes: list[tuple[float, float, int]], bpm: float) -> list[dict]:
     """Melody notes (start_s, dur_s, midi) -> candidates: long notes, notes on the beat and leaps score high."""
@@ -145,7 +145,7 @@ def chart_for_song(song, audio_path: str = "") -> Chart:
                  {d: place(ev, d) for d in DIFFICULTY}, song.note)
 
 
-# audio analysis
+# ---------------- audio analysis ----------------
 
 def analyse(y: np.ndarray, sr: int) -> dict:
     """Onsets, tempo and beats of a mono signal. Returns {bpm, beats, events, duration}."""
@@ -237,7 +237,7 @@ def analyse(y: np.ndarray, sr: int) -> dict:
     return {"bpm": round(bpm, 2), "beats": [round(float(b), 3) for b in beats], "events": events, "duration": dur}
 
 
-# decoding
+# ---------------- decoding ----------------
 
 def read_wav(path: Path) -> tuple[np.ndarray, int]:
     with wave.open(str(path), "rb") as w:

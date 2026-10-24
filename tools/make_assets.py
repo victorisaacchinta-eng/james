@@ -18,7 +18,7 @@ import config  # noqa: E402
 A = config.ASSETS
 A.mkdir(exist_ok=True)
 
-# manual
+# ---------- manual ----------
 PAGES = [
     ("Centrifugal Pump P-3, Plant Utilities",
      ["SAMPLE MAINTENANCE GUIDE FOR DEMONSTRATION.",

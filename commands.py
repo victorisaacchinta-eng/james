@@ -43,10 +43,10 @@ _AI = r"(chat\s?gpt|claude|perplexity|gemini)"
 _ASK = re.compile(r"\b(?:open|launch|go to|use|ask|tell)[\s,]+(?:the\s+)?(chat\s?gpt|claude|perplexity|gemini)(?:\s+app)?"
                   r"(?:\s+(?:in|on|using)\s+(?:the\s+)?(google chrome|chrome|safari|brave|firefox|arc|edge))?"
                   r"[\s,]*(?:(?:and|then|please|try|to|about|for|if|that)\s+)*(.*)$", re.I | re.S)
-# "In the web version of ChatGPT, search X" / "on Claude, explain X"
+# "In the web version of ChatGPT, search X" / "on Claude, explain X" (log 01:19:35)
 _ASK_IN = re.compile(r"^(?:in|on|using|with|inside)\s+(?:the\s+)?(?:web\s+version\s+of\s+|website\s+of\s+|app\s+)?"
                      + _AI + r"(?:\s+app|\s+website)?\s*,?\s+(.+)$", re.I | re.S)
-# "Then Claude will search about X" / "ChatGPT, write a poem"
+# "Then Claude will search about X" / "ChatGPT, write a poem" (log 01:19:11)
 _ASK_SUBJ = re.compile(r"^(?:then\s+|and\s+|now\s+)?" + _AI + r"\s*,?\s+(?:will|should|can|could|please|to|must)?\s*"
                        r"((?:search|find|research|write|explain|tell|make|create|generate|summari[sz]e|list|give|answer|help|draft)\b.+)$",
                        re.I | re.S)
@@ -112,7 +112,7 @@ def _clean(s: str) -> str:
     s = re.sub(r"(?<![a-z])'|'(?![a-z])", "", s)                          # quotes, but keep "what's"
     s = re.sub(r"[.!?]+$", "", s)
     s = re.sub(r"\b(open|launch|start|play|search|find|pause|resume)\s*,\s*", r"\1 ", s)   # "Open, Command Prompt"
-    s = re.sub(r"\b(front|back|rear|tempered|screen|camera)\s+class\b", r"\1 glass", s)       # "front class"
+    s = re.sub(r"\b(front|back|rear|tempered|screen|camera)\s+class\b", r"\1 glass", s)       # log 01:11:40 "front class"
     s = re.sub(r"^(?:hey |ok |okay )?(?:james[,]?\s+)?(?:(?:can|could|would) you\s+|please\s+)*", "", s)
     return s.strip(" ,")
 
@@ -143,7 +143,7 @@ _LONE_VERB = re.compile(r"(^|[.!?]\s+)(open|launch|start|close|quit|play|search(
 
 
 def split_clauses(text: str) -> list[str]:
-    text = _LONE_VERB.sub(r"\1\2 ", unabbrev(text))            # "Open. Key Note on my MacBook."
+    text = _LONE_VERB.sub(r"\1\2 ", unabbrev(text))            # log 03:27:53 "Open. Key Note on my MacBook."
     out = []
     for sentence in re.split(r"(?<=[.!?])\s+", text.strip()):                   # "So this is what... I want you to open"
         for c in _SPLIT.split(_clean(sentence)):
@@ -244,7 +244,7 @@ WINDOW_DAYS = {"week": 7, "month": 30, "year": 365}
 
 def clean_search(q: str, site: str = "", today: datetime.date | None = None, keep: bool = True) -> str:
     """'the top best repos for iot and hardware' on GitHub -> 'iot and hardware' (ranking words become a sort).
-    'the top, month, repos' -> 'created:>YYYY-MM-DD' (made in the last 30 days, sorted by stars)."""
+    'the top, month, repos' (log 01:59:29) -> 'created:>YYYY-MM-DD' (made in the last 30 days, sorted by stars)."""
     q = orig = q.strip()
     if site == "github":
         q = re.sub(r"\s*[,;]+\s*", " ", q).strip()
@@ -257,7 +257,7 @@ def clean_search(q: str, site: str = "", today: datetime.date | None = None, kee
         q = re.sub(r"^(?:the\s+|some\s+)?(?:(?:top|best|good|popular|most\s+starred|latest|new)\s+)*", "", q)
         q = re.sub(r"^(?:\d+\s+)?(?:repos?|repositories|repository|repose|reports?|projects?|libraries|library|code)\s+"
                    r"(?:for|on|about|of|in|with)\s+", "", q)
-        # "the repo, which is related to weather" -> "weather"
+        # log 03:27:30 "the repo, which is related to weather" -> "weather"
         q = re.sub(r"^(?:(?:the|a|any|some)\s+)?(?:repos?|repositories|repository|projects?)\s+"
                    r"(?:which|that)\s+(?:is|are)\s+(?:related\s+to|about|for|on|using)\s+", "", q)
         q = re.sub(r"^(?:related\s+to|about)\s+", "", q)
@@ -278,7 +278,7 @@ def _open_then_search(c: str) -> list[str]:
 
 def plan(text: str) -> list[Step]:
     """Sentence -> steps. 'Open Chrome and play X' becomes one step: play X in Chrome."""
-    text = re.sub(r"\s+(?:and|then|to|so)\s+(?:\S+\s+){0,2}\S*\s*(?:\.\.\.|…)\s*$", ".", text.strip())   # cut-off end
+    text = re.sub(r"\s+(?:and|then|to|so)\s+(?:\S+\s+){0,2}\S*\s*(?:\.\.\.|…)\s*$", ".", text.strip())   # cut-off end (01:33:30)
     asked = ask_step(text) or message_step(text) or send_step(text)
     if asked:
         return [asked]
@@ -330,7 +330,7 @@ def human_query(q: str) -> str:
     return f"{base + ', ' if base else 'repos '}made since {d.strftime('%B')} {d.day}"
 
 
-# what the words forbid, and what the plan leaves out
+# ---------- what the words forbid, and what the plan leaves out (iteration 2, P0-B / ST-02 / ST-03) ----------
 KIND_VERBS = {
     "send": r"send|submit|post",
     "close": r"close|quit|exit|kill|shut(?:\s+down)?",
@@ -386,7 +386,7 @@ def _fragment(text: str, start: int) -> str:
 
 def leftovers(text: str, steps: list[Step]) -> list[str]:
     """Parts of the request no step covers, so JAMES can say so instead of reporting success
-    ('find his son and return his full name', 'copy and paste 6 movies on Macpad')."""
+    (log 02:01:16 'find his son and return his full name', 02:21:23 'copy and paste 6 movies on Macpad')."""
     t = unquoted(text)
     low = t.lower()
     kinds = {s.kind for s in steps}
@@ -406,7 +406,7 @@ def leftovers(text: str, steps: list[Step]) -> list[str]:
     m = ANSWER.search(low)
     if m and not is_question(text):
         out.append(_fragment(t, m.start()))
-    d = _NOTES_DEST.search(low)                  # '... their names in the Notes app'
+    d = _NOTES_DEST.search(low)                  # live 04:22:06 / 04:24:02: '... their names in the Notes app'
     if d and not is_question(text) and not any(
             s.kind == "collect" or s.to == "notes" or (s.kind == "open" and re.search(r"\bnote", s.arg)) for s in steps):
         seps = (" and ", ",", ".", ";", " then ")
@@ -429,15 +429,15 @@ SURE_KINDS = {"open", "play", "media", "identify"}
 
 
 def immediate_ok(steps: list[Step]) -> bool:
-    """An uncertain request is confirmed before it runs, whatever it is. The one exception is
+    """Iteration 3: an uncertain request is confirmed before it runs, whatever it is. The one exception is
     stopping playback ('pause'): it only stops something, and waiting to confirm it would be worse."""
     return bool(steps) and all(st.kind == "media" and st.arg == "pause" for st in steps)
 
 
 def sure_enough(steps: list[Step], can_open) -> bool:
     """Heard below 0.5 confidence: run only short, checkable commands, and only when every app named really
-    exists. 'Open the KPDR search for a go-by request.' (0.43) ran a Google search;
-    'Open safari.' (0.43) and 'Open chrome and play Despacito.' (0.47) were real commands."""
+    exists. Log 02:00:39 'Open the KPDR search for a go-by request.' (0.43) ran a Google search;
+    20:40:26 'Open safari.' (0.43) and 21:25:17 'Open chrome and play Despacito.' (0.47) were real commands."""
     return bool(steps) and all(st.kind in SURE_KINDS and (st.kind != "open" or can_open(st.arg)
                                                            or (st.browser and web_target(st.arg)[1] != "search"))
                                for st in steps)
@@ -447,7 +447,7 @@ SITE_NAMES = {"amazon": "Amazon", "github": "GitHub", "youtube": "YouTube", "spo
 
 
 def ungrounded(text: str, steps: list[Step]) -> tuple[list[Step], list[str]]:
-    """A model plan may only use a site the person named. 'Open IMDB on Chrome and
+    """A model plan may only use a site the person named. Live 04:22:06 and 04:24:02: 'Open IMDB on Chrome and
     list the top 10 grossing movies...' became 'Search Amazon for top 10 grossing movies' (twice)."""
     low = " " + re.sub(r"[^a-z0-9]+", " ", (text or "").lower()) + " "
     keep, why = [], []
@@ -461,7 +461,7 @@ def ungrounded(text: str, steps: list[Step]) -> tuple[list[Step], list[str]]:
         keep.append(st)
     return keep, why
 
-# multi-step: close an app, save results to Notes, message someone
+# ---------- multi-step: close an app, save results to Notes, message someone ----------
 _CLOSE = re.compile(r"^(?:close|quit|exit|kill|shut)\s+(?:down\s+)?(?:the\s+)?(.+?)(?:\s+(?:app|application|window))?$")
 _COLLECT = re.compile(r"\b(?:copy|save|collect|paste|put|write|note\s+down|list|add|store|keep)\b.{0,60}?"
                       r"\b(?:links?|urls?|repos?|repositor(?:y|ies)|results?|videos?|them|those|these|all)\b", re.I | re.S)
@@ -568,7 +568,7 @@ def close_step(c: str) -> Step | None:
     return Step("close", "" if APP_PRONOUNS.match(name) else name)
 
 
-# well-known web apps: "open instagram" when there is no Instagram app opens the website
+# well-known web apps: "open instagram" when there is no Instagram app opens the website (log 01:36:24)
 WEB_APPS = {"instagram": "https://www.instagram.com/", "insta": "https://www.instagram.com/",
             "whatsapp": "https://web.whatsapp.com/", "whatsapp web": "https://web.whatsapp.com/",
             "gmail": "https://mail.google.com/", "youtube": "https://www.youtube.com/", "github": "https://github.com/",
@@ -583,7 +583,8 @@ _DOMAIN = re.compile(r"^[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|in|org|net|io|ai|dev
 
 
 def web_target(name: str) -> tuple[str, str]:
-    """'open <name> on Chrome': the page to open and how it was found (site | domain | search). 'Open ChatGPT on Chrome' launched the ChatGPT app; 'Open IMDB on Chrome' found nothing."""
+    """'open <name> on Chrome': the page to open and how it was found (site | domain | search). Live 04:21:34
+    'Open ChatGPT on Chrome' launched the ChatGPT app; 04:23:26 'Open IMDB on Chrome' found nothing."""
     n = re.sub(r"^(?:the\s+)", "", (name or "").strip().lower().rstrip(". "))
     n = re.sub(r"\s+(?:website|web\s*site|site|page|app)$", "", n)
     for k in (n, n.replace(" ", "")):
@@ -647,7 +648,7 @@ def ask_step(text: str) -> Step | None:
 
 
 def send_step(text: str) -> Step | None:
-    """'Click Enter on the web version of ChatGPT' / 'send it' -> press the chat's send button."""
+    """'Click Enter on the web version of ChatGPT' / 'send it' -> press the chat's send button (log 01:20:13)."""
     m = SEND.match(_clean(text))
     if not m:
         return None
@@ -672,7 +673,7 @@ NOISE_WORDS = {"top", "best", "popular", "good", "latest", "new", "repos", "repo
 
 
 def unabbrev(text: str) -> str:
-    """'Mr. News' must not end a sentence (split 'play Mr.' from 'News the Boss')."""
+    """'Mr. News' must not end a sentence (log 00:57:10 split 'play Mr.' from 'News the Boss')."""
     return re.sub(r"\b(Mr|Mrs|Ms|Dr|St|Vs|Jr|Sr|No|Prof|Mt)\.(?=\s)", r"\1", text, flags=re.I)
 
 
@@ -718,7 +719,7 @@ def ask_url(who: str, prompt: str) -> str:
 
 def with_context(steps: list[Step], text: str) -> list[Step]:
     """'How do I fix the front glass of a Realme 15 Pro? Search it on Chrome.' -> search for the question.
-    A search for 'it' / 'that' uses the other sentences as the query (searched Google for 'it')."""
+    A search for 'it' / 'that' uses the other sentences as the query (log 01:11:40 searched Google for 'it')."""
     for st in steps:
         if st.kind == "search" and st.arg in PRONOUNS:
             ctx = [x for x in re.split(r"(?<=[.!?])\s+", unabbrev(text).strip())
@@ -736,7 +737,7 @@ def browser_name(spoken: str) -> str:
     return BROWSERS.get(s, "")
 
 
-# URLs (all public pages)
+# ---------- URLs (all public pages) ----------
 
 def youtube_search_url(q: str) -> str:
     return "https://www.youtube.com/results?search_query=" + urllib.parse.quote_plus(q)

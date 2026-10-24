@@ -56,7 +56,7 @@ def point_on(a, pid):
     return int(round((ax[k][0] + bx[k][0]) / 2)), int(round((ax[k][1] + bx[k][1]) / 2))
 
 
-# poses
+# ---------------- poses ----------------
 
 @pytest.mark.parametrize("pose,expect", [("open", "palm"), ("half", "palm"), ("fist", "palm"), ("point", "point"),
                                          ("peace", "peace"), ("pinch", "pinch")])
@@ -93,7 +93,7 @@ def test_one_odd_frame_changes_nothing():
     assert set(seen) == {"palm"}
 
 
-# open slowly / close your hand
+# ---------------- open slowly / close your hand ----------------
 
 def test_explode_follows_how_open_the_hand_is():
     a, c = make(), Clock()
@@ -117,7 +117,7 @@ def test_turning_into_a_point_or_pinch_keeps_the_explode_the_open_hand_set():
     assert a.hands.pose == "point" and a.explode.target == 1.0
 
 
-# move or twist
+# ---------------- move or twist ----------------
 
 def test_a_still_open_hand_with_tracking_jitter_turns_nothing():
     a, c = make(), Clock()
@@ -156,7 +156,7 @@ def test_a_hand_that_just_came_into_view_turns_nothing():
     assert a.yaw.target == yaw0
 
 
-# point / pinch
+# ---------------- point / pinch ----------------
 
 def test_pointing_lights_the_part_and_its_card():
     a, c = make(), Clock()
@@ -224,7 +224,7 @@ def test_fingertip_only_sources_still_pick_and_highlight():
     assert a.selected == "coupling_guard"
 
 
-# two hands
+# ---------------- two hands ----------------
 
 def other(x, pose="open"):
     return HP.synth(pose, (x, 600), 110)
@@ -259,7 +259,7 @@ def test_a_second_hand_lost_for_a_frame_keeps_the_zoom():
     assert a.hands.two is not None and a.zoom.target == pytest.approx(1.96, abs=0.02)
 
 
-# peace
+# ---------------- peace ----------------
 
 def test_peace_held_asks_for_the_next_model_once():
     a, c = make(policy=False), Clock()
@@ -277,7 +277,7 @@ def test_peace_does_nothing_in_the_maintenance_app():
     assert a.requests == [] and a.selected is None
 
 
-# the rest
+# ---------------- the rest ----------------
 
 def test_reduced_motion_never_animates():
     a = Atlas(config.PACK.model(), load_policy(), reduced_motion=True)
@@ -319,7 +319,7 @@ def test_noisy_landmarks_on_a_still_hand_change_nothing(pose):
     assert abs(a.explode.target - e0) <= 0.04 and seen == {pose0}
 
 
-# review round: each of these misfired before its fix
+# ---------------- review round: each of these misfired before its fix ----------------
 
 def _blend_fist_to_open(k):
     f, o = HP.synth("fist", (900, 600), 110), HP.synth("open", (900, 600), 110)

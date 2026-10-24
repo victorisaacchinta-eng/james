@@ -1,4 +1,4 @@
-"""FOREMAN: the coordinator. An investigation loop, not a single pass.
+"""FOREMAN: the coordinator. An investigation loop, not a single pass (iteration 2, P0-E).
 
 Round 0  PAGE, PULSE and LEDGER recall run in parallel (a LangGraph fan-out).
 Round 1+ FOREMAN looks at what came back and picks ONE next action from the actions that are valid right now:
@@ -12,7 +12,7 @@ Round 1+ FOREMAN looks at what came back and picks ONE next action from the acti
 Then     PAGE's procedure for that cause becomes typed, hazard-tagged steps. A step is kept only if the cited
          page really contains it. Each step cites the procedure page and the evidence for the cause.
 
-Rules FOREMAN keeps:
+Rules FOREMAN keeps (iteration 2, P1-D):
   * A past job (memory) never decides a cause on its own. It must apply (same class, known cause, not stale,
     not revoked: see agents/recall.py) and it only adds weight.
   * A cause the manual never names is not used, whoever suggests it.
@@ -53,7 +53,7 @@ ORIGINS = ("fan-out", "technician", "model", "rules", "rules-fallback")
 
 @dataclass
 class TraceRow:
-    """One round. origin says WHICH system made the accepted decision:
+    """One round. origin says WHICH system made the accepted decision (iteration 3, item B):
     model           the local model's choice was valid and was used
     rules           the model was not asked (not running, or only one valid action)
     rules-fallback  the model was asked but its reply was unusable; `fallback` says why; the rules chose
@@ -109,7 +109,7 @@ def _label(cause: str) -> str:
 class Foreman:
     MAX_ROUNDS = 6          # decision rounds after the fan-out, whatever the actions are
     PAGE_MAX = 3            # manual searches per investigation, first one included
-    MAX_TOOL_CALLS = 6      # PAGE searches + PAGE checks after the fan-out
+    MAX_TOOL_CALLS = 6      # PAGE searches + PAGE checks after the fan-out (iteration 3, item D)
     TIME_BUDGET_S = 60.0    # the whole investigation, model calls included; checked before every round
 
     def __init__(self, manual: ManualIndex, ledger: Ledger, policy: Policy, pack=None, use_sensors: bool = True):
@@ -124,7 +124,7 @@ class Foreman:
         except Exception as e:  # noqa: BLE001
             self._graph, self.orchestrator = None, f"thread pool ({type(e).__name__}) + FOREMAN loop"
 
-    # round 0: evidence agents as graph nodes
+    # ---- round 0: evidence agents as graph nodes ----
     def _page(self, s: GState):
         t = time.perf_counter()
         ev, notes = self.manual.troubleshoot(s["intent"].symptoms, s["intent"].transcript, s["intent"].asset_id,
@@ -169,7 +169,7 @@ class Foreman:
                     s[k] = s.get(k, []) + v
         return s
 
-    # what FOREMAN can see after each round
+    # ---- what FOREMAN can see after each round ----
     def _observe(self, ev: list[Evidence], checked_ok: set[str]) -> dict:
         manuals = [e for e in ev if e.kind == EvidenceKind.MANUAL and e.stance is None]
         manual = max(manuals, key=lambda e: e.confidence) if manuals else None
@@ -279,7 +279,7 @@ class Foreman:
             return " ".join(dict.fromkeys(words)) or intent.transcript
         return self.manual._rewrite(" ".join(words) + " " + intent.transcript)   # model rewrite, else synonyms
 
-    # the investigation
+    # ---- the investigation ----
     def plan(self, intent: Intent, answers: Optional[dict[str, bool]] = None) -> Plan:
         answers = dict(answers or {})
         self._cls = self.pack.class_of(intent.asset_id) or self.pack.primary_class

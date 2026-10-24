@@ -18,24 +18,24 @@ def plan(t):
 
 
 @pytest.mark.parametrize("said,want", [
-    # preamble swallowed "open asphalt"; "play the game" searched YouTube for "the game"
+    # 00:32:07 preamble swallowed "open asphalt"; "play the game" searched YouTube for "the game"
     ("So this is what is happening. I want you to open Asphalt and Play the Game.", [("open", "asphalt", "", "")]),
-    # opened YouTube's home page AND the video: two tabs
+    # 00:56:29 opened YouTube's home page AND the video: two tabs
     ("Open YouTube and play Paradise Songs.", [("play", "paradise songs", "youtube", "")]),
-    # "Spouse" = misheard "Pause"
+    # 00:57:24 "Spouse" = misheard "Pause"
     ("Spouse the video that is playing on YouTube.", [("media", "pause", "youtube", "")]),
-    # searched YouTube for "that is playing"
+    # 00:57:43 searched YouTube for "that is playing"
     ("Play the video that is playing on YouTube.", [("media", "play", "youtube", "")]),
-    # the comma after Open broke the command
+    # 00:58:07 the comma after Open broke the command
     ("Open, Command Prompt on my MacBook.", [("open", "command prompt on my macbook", "", "")]),
-    # "on" heard as "and": played "despacito and spotify" on YouTube
+    # 00:58:21 "on" heard as "and": played "despacito and spotify" on YouTube
     ("Play Despacito and Spotify.", [("play", "despacito", "spotify", "")]),
-    # "Play" heard as "Note"
+    # 00:58:36 "Play" heard as "Note"
     ("Note Despacito on Spotify.", [("play", "despacito", "spotify", "")]),
     ("Play Despacito on Spotify.", [("play", "despacito", "spotify", "")]),
-    # the whole sentence was taken as an app name
+    # 00:59:12 the whole sentence was taken as an app name
     ("Open GitHub and try to find the top best repose for IoT and hardware.", [("search", "iot and hardware", "github", "")]),
-    # no 'and': opened Chrome, dropped the search
+    # 00:59:21 no 'and': opened Chrome, dropped the search
     ("Open Chrome search for top GitHub reports for IOT and hardware and computer vision.",
      [("search", "iot and hardware and computer vision", "github", "Google Chrome")]),
     ("pause", [("media", "pause", "", "")]),
@@ -62,8 +62,8 @@ def test_github_top_sorts_by_stars():
 def test_open_the_game_asphalt_and_command_prompt():
     apps = {"Asphalt": "/Applications/Asphalt.app", "Terminal": "/System/Applications/Utilities/Terminal.app",
             "Game Center": "/System/Applications/Game Center.app", "GOT Kingsroad": "/Applications/GOTKingsroad.app"}
-    assert LA.find_app("the game asphalt on my macbook", apps)[0] == "Asphalt"
-    assert LA.find_app("command prompt on my macbook", apps)[0] == "Terminal"
+    assert LA.find_app("the game asphalt on my macbook", apps)[0] == "Asphalt"                 # 00:32:25
+    assert LA.find_app("command prompt on my macbook", apps)[0] == "Terminal"                   # 00:58:07
     assert LA.find_app("game of thrones game", apps)[0] == "GOT Kingsroad"                      # still works
     assert LA.find_app("game center", apps)[0] == "Game Center"
 

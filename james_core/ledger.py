@@ -3,7 +3,7 @@ and recall of senior-approved past jobs.
 
 UPDATE and DELETE on events are refused by triggers, so the log can only grow.
 
-Hash chain: every event also gets a row in `chain` holding SHA-256(previous hash + the event),
+Hash chain (iteration 10): every event also gets a row in `chain` holding SHA-256(previous hash + the event),
 written in the same transaction. Triggers stop casual edits; the chain makes any edit that slips past them (for
 example after someone drops the triggers) visible to `verify()` and `python -m tools.verify_ledger`. It is
 tamper-EVIDENT, not tamper-proof: someone who rewrites every row and recomputes every hash, or removes the newest
@@ -123,7 +123,7 @@ class Ledger:
         self.db.executescript(SCHEMA)
         self.sealed_on_open = self._seal_legacy()
 
-    # event log
+    # ---- event log ----
     @_locked
     def append(self, session_id: str, kind: str, payload: dict, accepted: bool = True) -> int:
         ts, text = datetime.now(timezone.utc).isoformat(), json.dumps(payload, default=_default, sort_keys=True)
@@ -264,7 +264,7 @@ class Ledger:
             (session_id,)).fetchall()
         return [dict(seq=s, ts=t, kind=k, accepted=bool(a), payload=json.loads(p)) for s, t, k, a, p in rows]
 
-    # memory of past jobs
+    # ---- memory of past jobs ----
     @_locked
     def add_job(self, job_id: str, asset_id: str, symptoms: Iterable[str], fix: str,
                 approved_by: str | None = None, sample_data: bool = True, cause: str | None = None,
@@ -294,7 +294,7 @@ class Ledger:
 
     @_locked
     def revoke_approval(self, job_id: str, by: str, reason: str) -> None:
-        """A senior withdraws an approval. Nothing is edited or deleted: a 'revoke' review row
+        """A senior withdraws an approval (iteration 2, ST-19). Nothing is edited or deleted: a 'revoke' review row
         and an event are added, and recall stops offering the job from then on."""
         if not reason.strip():
             raise ValueError("a revocation needs a reason")
@@ -337,7 +337,7 @@ class Ledger:
         scored.sort(key=lambda x: (x[0], x[1]), reverse=True)   # best match, then most recent
         return [j for _, _, j in scored]
 
-    # repair record
+    # ---- repair record ----
     @_locked
     def repair_record(self, session_id: str) -> str:
         ev = self.events(session_id)

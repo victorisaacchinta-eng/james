@@ -21,7 +21,7 @@ PHONE = {"object": "smartphone", "brand": None, "model": None, "model_confidence
                              {"title": "Camera not focusing", "sign": "blurry photos", "seen": True}]}
 
 
-# the list
+# ---------- the list ----------
 
 def test_every_catalog_kind_has_four_problems_with_steps():
     for kind, c in PR.CATALOG.items():
@@ -58,7 +58,7 @@ def test_merge_with_no_model_uses_the_catalog():
     assert [p["title"] for p in out] == [p["title"] for p in PR.CATALOG["bottle"]["problems"]]
 
 
-# the fix
+# ---------- the fix ----------
 
 def test_fix_from_model(monkeypatch):
     monkeypatch.setattr(vision.llm, "chat_json", lambda *a, **k: {
@@ -92,7 +92,7 @@ def test_pick_number():
     assert JM.pick_number("redmi note 10") is None and JM.pick_number("it is a two door fridge") is None
 
 
-# the flow in james.py
+# ---------- the flow in james.py ----------
 
 def _identified(j, monkeypatch, result=PHONE):
     import james as JM
@@ -193,7 +193,7 @@ def test_problems_and_fix_panels_render(monkeypatch, W, H):
 
 
 def test_live_duplicate_from_log_is_merged():
-    """The model said 'Screen cracks from drops' 4 times; the catalog's cracked-screen entry slipped in too."""
+    """Log 00:53:09: the model said 'Screen cracks from drops' 4 times; the catalog's cracked-screen entry slipped in too."""
     out = PR.merge("smartphone", [{"title": "Screen cracks from drops", "sign": "", "seen": True}] * 4, "cracked screen")
     titles = [p["title"] for p in out]
     assert titles.count("Cracked screen or back glass") == 0 and len(out) == 4

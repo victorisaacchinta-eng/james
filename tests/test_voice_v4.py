@@ -11,7 +11,7 @@ import launcher_apps as LA    # noqa: E402
 
 
 @pytest.mark.parametrize("said,who,browser,starts,has", [
-    # ChatGPT opened, the request was dropped
+    # 01:08:24, 01:10:20, 01:10:55: ChatGPT opened, the request was dropped
     ("Open ChatGPT and research on the World War II and the effect of Germany and Hitler and tell it to generate a document.",
      "chatgpt", "", "Research the World War II", "generate a document"),
     ("Open ChatGPT in Chrome and try to research on GitHub and the fact that you had on World War Two and try to make it at the document.",
@@ -76,4 +76,4 @@ def test_ask_step_runs_and_copies(monkeypatch):
     j.run_plan(C.plan("Open ChatGPT in Chrome and research on the history of Hyderabad."))
     assert opened == [("https://chatgpt.com/?q=Research%20the%20history%20of%20Hyderabad.", "/Applications/Google Chrome.app")]
     assert copied == ["Research the history of Hyderabad."]
-    assert j.voice["steps"][0][1] == "ok" and j.voice["steps"][1][0].startswith("Your prompt is ready in ChatGPT")  # not auto-sent
+    assert j.voice["steps"][0][1] == "ok" and j.voice["steps"][1][0].startswith("Your prompt is ready in ChatGPT")  # iteration 2: not auto-sent

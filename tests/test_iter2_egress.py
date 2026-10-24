@@ -1,4 +1,4 @@
-"""Bound send, and one egress gate with separate tool families."""
+"""Iteration 2 P0-C / P0-D: bound send, and one egress gate with separate tool families (ST-04, ST-05, ST-06)."""
 import subprocess
 
 import pytest
@@ -62,7 +62,7 @@ def test_consumer_mode_still_opens_pages(monkeypatch):
     assert opened and egress.outbound()[-1]["allowed"]
 
 
-# no hidden send; send only into the tab holding the prepared prompt
+# ---- ST-04 / ST-05: no hidden send; send only into the tab holding the prepared prompt ----
 
 def _fake_chrome(monkeypatch, tabs):
     calls = []

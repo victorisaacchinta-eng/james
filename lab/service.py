@@ -34,7 +34,7 @@ class LabError(Exception):
 class Lab:
     def __init__(self, db_path=None):
         from james_core import egress
-        egress.set_mode("maintenance")              # the Lab is local only
+        egress.set_mode("maintenance")              # iteration 2 P0-D: the Lab is local only
         t0 = time.perf_counter()
         self.meta = yaml.safe_load((settings.METADATA / "assets.yaml").read_text())["assets"]
         self.cfg = yaml.safe_load((settings.METADATA / "scenarios.yaml").read_text())
@@ -46,7 +46,7 @@ class Lab:
                 pack = load_pack(settings.PACKS / pid)            # hash-verified, fails closed
                 self.packs[pid] = pack
                 cls = pack.class_of(aid)
-                self.policies[pid] = load_policy(pack.rules_bytes(cls))          # verified bytes
+                self.policies[pid] = load_policy(pack.rules_bytes(cls))          # verified bytes (iteration 2 P1-E)
                 proc = parse_document(pack.manual_path(cls), f"pack:{pid}", pack.manual_bytes(cls)[1])
                 self.procs[pid] = proc
                 docs.append(proc)
@@ -73,7 +73,7 @@ class Lab:
         if missing:
             raise RuntimeError(f"pack {pid}: rules {missing} are not documented in its policy document")
 
-    # helpers
+    # ---------- helpers ----------
     def _trace(self, what: str, t0: float, **info) -> float:
         ms = round((time.perf_counter() - t0) * 1000, 1)
         self.log.appendleft({"at": time.strftime("%H:%M:%S"), "call": what, "ms": ms, **info})
@@ -107,7 +107,7 @@ class Lab:
                 out[aid] = {c.column: c.unit for c in s.channels.values()}
         return out
 
-    # scenarios and datasets
+    # ---------- scenarios and datasets ----------
     def scenarios(self) -> list[dict]:
         return [{"id": k, **v, "assets": list(self.meta)} for k, v in self.cfg["scenarios"].items()]
 
@@ -130,7 +130,7 @@ class Lab:
         clock = parse_ts(sc["clock"]) if sc.get("clock") else max(s.ts for s in ds.samples)
         return ds, imported, clock
 
-    # jobs
+    # ---------- jobs ----------
     def create_job(self, scenario: str, asset_id: str, question: str) -> dict:
         self.scenario(scenario)
         m = self.asset(asset_id)
@@ -189,7 +189,7 @@ class Lab:
         evs = [e for e in self.store.events(job_id) if e["type"] == type_]
         return evs[-1] if evs else None
 
-    # guidance
+    # ---------- guidance ----------
     def guidance(self, job_id: str, mode: Optional[str] = None) -> dict:
         t0 = time.perf_counter()
         job = self._job(job_id)
@@ -243,7 +243,7 @@ class Lab:
                           "decisions": {s["step_id"]: s["policy"] for s in view["steps"]}})
         return {"proposal": json.loads(p.model_dump_json()), "timing_ms": ms, **view}
 
-    # steps and WARDEN
+    # ---------- steps and WARDEN ----------
     def _proposal(self, job: dict) -> tuple[GuidanceProposal, dict]:
         if not job.get("current_proposal"):
             raise LabError(409, "no guidance yet for this job")
@@ -381,7 +381,7 @@ class Lab:
         self.store.remember(job_id, key, resp)
         return resp
 
-    # closure and review
+    # ---------- closure and review ----------
     def completeness(self, job_id: str) -> dict:
         job = self._job(job_id)
         evs = self.store.events(job_id)
@@ -454,7 +454,7 @@ class Lab:
         self.store.remember(job_id, key, resp)
         return resp
 
-    # memory: reviewed reuse
+    # ---------- memory: reviewed reuse ----------
     def _steps_done(self, job_id: str) -> list[str]:
         out = []
         for e in self.store.events(job_id):
@@ -521,7 +521,7 @@ class Lab:
             self.store.append(h["job_id"], "JOB_CLOSED", {"outcome": h["outcome"], "summary": h["summary"]})
             self.store.add_review(h["job_id"], h["review"], "seeded demo history", "seed")
 
-    # views, sources, exports
+    # ---------- views, sources, exports ----------
     def job_view(self, job_id: str) -> dict:
         job = self._job(job_id)
         return {"job": job, "completeness": self.completeness(job_id), "reviews": self.store.reviews(job_id),

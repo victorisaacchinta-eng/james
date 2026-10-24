@@ -1,6 +1,6 @@
-"""FOREMAN investigates (observe -> decide -> act), and history is filtered before use.
-Covers weak retrieval, a stale or incompatible case, an unrelated citation, a missing prerequisite,
-an old confirmation, a duplicate work record, a revoked approval and offline labelling."""
+"""Iteration 2 P0-E / P1-D: FOREMAN investigates (observe -> decide -> act), and history is filtered before use.
+ST-07 weak retrieval, ST-08 stale/incompatible case, ST-09 unrelated citation, ST-10 missing prerequisite,
+ST-11 old confirmation, ST-13 duplicate work record, ST-19 revoked approval, ST-20 offline labelling."""
 import time
 from datetime import datetime, timedelta, timezone
 
@@ -140,7 +140,7 @@ def test_st20_offline_run_is_labelled(manual):
     assert all(r.decided_by in ("fan-out", "rules") for r in p.trace) and "rules" in p.cause_backend
 
 
-# the app around it
+# ---- the app around it ----
 
 def _app():
     from app import App

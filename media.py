@@ -93,7 +93,7 @@ def control(action: str, prefer: str = "") -> tuple[bool, str, str]:
     return False, last or "nothing is playing", ""
 
 
-# press send in an AI chat tab (Chrome)
+# ---------- press send in an AI chat tab (Chrome) ----------
 CHAT_HOSTS = {"chatgpt": "chatgpt.com", "claude": "claude.ai", "perplexity": "perplexity.ai", "gemini": "gemini.google.com"}
 SEND_JS = {
     "chatgpt": "(function(){var b=document.querySelector('#composer-submit-button')||"
@@ -133,7 +133,7 @@ def _find_script(host: str, read_js: str) -> str:
 
 
 def _click_script(read_js: str, send_js: str) -> str:
-    """Press send in ONE tab, re-checked at the moment of the click:
+    """Press send in ONE tab, re-checked at the moment of the click (iteration 3, item F):
     argv 1 = tab id, argv 2 = the URL it had, argv 3 = the composer text it had. If the tab navigated or the
     text changed since it was read, nothing is clicked. The argv values are only compared, never executed."""
     return ('on run argv\n set tid to (item 1 of argv) as number\n tell application "Google Chrome"\n'
@@ -215,7 +215,7 @@ def chat_send(who: str, prompt: str, wait_s: float = 0.0) -> tuple[bool, str]:
                    "disabled": "the prompt box is empty; press Enter after typing"}.get(out, (out or "not sent")[:80])
 
 
-# close (quit) an app
+# ---------- close (quit) an app ----------
 QUIT_SCRIPT = """on run argv
   tell application id (item 1 of argv) to quit
   return "ok"

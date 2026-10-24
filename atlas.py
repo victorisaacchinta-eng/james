@@ -180,7 +180,7 @@ class Atlas:
         #                                  keeps it faint (the task card matters); the ATLAS app shows you, like a mirror
         self.legend_outside = False        # the app draws the legend and the part card itself (wide window)
 
-    # open / close
+    # ---------- open / close ----------
     def open(self, asset_id: str, now: float | None = None):
         now = time.monotonic() if now is None else now
         self.active, self.asset_id, self.opened_at = True, asset_id, now
@@ -211,7 +211,7 @@ class Atlas:
         return (self.explode, self.yaw, self.pitch, self.roll, self.zoom, self.pan_x, self.pan_y,
                 self.grab_x, self.grab_y)
 
-    # direct controls (keys and buttons call these; gestures end up here too)
+    # ---------- direct controls (keys and buttons call these; gestures end up here too) ----------
     def reset_view(self):
         self.hands.hist.clear()                          # a key or button wins over any undo
         self.yaw.target, self.pitch.target, self.roll.target = BASE_YAW, BASE_PITCH, 0.0
@@ -254,7 +254,7 @@ class Atlas:
                 "ms_since_open": int((now - self.opened_at) * 1000),
                 "in_current_step": p.id in self.linked()}))
 
-    # what is lit
+    # ---------- what is lit ----------
     def linked(self) -> list[str]:
         if self.library or (not self.ctx.text and not self.ctx.touches):
             return []
@@ -284,7 +284,7 @@ class Atlas:
         txt = "Gated by " + ", ".join(d.rule_ids) + (". Needs " + ", ".join(need) if need else "")
         return "gate", txt, J.ERROR
 
-    # input
+    # ---------- input ----------
     def update(self, r, now: float):
         """Read one frame of LENS (already in screen coordinates): r.hand is the driving hand's 21 points,
         r.others the other hands in view. atlas_gestures.HandEngine turns them into commands."""
@@ -310,7 +310,7 @@ class Atlas:
         self._sway += (target - self._sway) * min(1.0, dt * 1.5)
         self._phase = getattr(self, "_phase", 0.0) + dt * 0.45 * self._sway
 
-    # geometry
+    # ---------- geometry ----------
     def _sway_deg(self) -> float:
         """Idle sway in degrees, in 0.75 degree steps: a swaying view redraws about 5 times a second."""
         return round(9.0 * self._sway * math.sin(getattr(self, "_phase", 0.0)) / 0.75) * 0.75
@@ -425,7 +425,7 @@ class Atlas:
                     best, best_key = pid, key
         return best
 
-    # drawing
+    # ---------- drawing ----------
     def role(self, pid: str, linked: list) -> str:
         if pid in linked and self.ctx.blocked:
             return "blocked"                       # safety colour wins over selection; selection keeps its brackets

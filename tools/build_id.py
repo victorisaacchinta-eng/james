@@ -1,4 +1,4 @@
-"""A stable identifier for exactly this build.
+"""A stable identifier for exactly this build (iteration 2, section 9).
 
     python -m tools.build_id          # prints: JAMES build <12 hex> (<n> files)
 
@@ -45,7 +45,7 @@ PACKAGES = ("numpy", "opencv-contrib-python", "mediapipe", "faster-whisper", "on
 
 
 def environment() -> dict:
-    """What the build ran on: Python, OS, package versions, the local model and the pack."""
+    """What the build ran on (iteration 3, section 7): Python, OS, package versions, the local model and the pack."""
     import platform
     from importlib import metadata
     sys.path.insert(0, str(ROOT))

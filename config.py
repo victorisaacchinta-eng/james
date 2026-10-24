@@ -90,7 +90,7 @@ CANTUS_NO_FAIL = True            # True: running out of energy never ends the so
 MANUAL = PACK.manual_path()             # packs/<pack>/docs/...
 SEEDED_JOBS = ASSETS / "seeded_jobs.yaml"
 DB = DATA / "james.db"
-MEMORY_MAX_AGE_DAYS = 730                # older approved jobs are not offered as similar cases
+MEMORY_MAX_AGE_DAYS = 730                # iteration 2 P1-D: older approved jobs are not offered as similar cases
 RUNS_CSV = DATA / "runs.csv"
 
 # Talkback: JAMES speaks, offline. TALK_ENGINE "auto" = the neural voice (Kokoro, assets/voice/) when installed,
@@ -99,7 +99,7 @@ RUNS_CSV = DATA / "runs.csv"
 # (neural: bm_fable; say: the best male English voice installed). TALK_SIR is how JAMES addresses you.
 TALKBACK = True
 TALK_ENGINE = "auto"
-# opening ChatGPT/Claude with a prompt only FILLS the box. JAMES presses send only when you say
+# Iteration 2 P0-C: opening ChatGPT/Claude with a prompt only FILLS the box. JAMES presses send only when you say
 # 'send it', and only in the tab holding that exact prompt. The page selectors are UNVERIFIED, so this stays False.
 ASK_AUTO_SEND = False
 TALK_VOICE = ""
