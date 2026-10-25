@@ -3,12 +3,12 @@
 </p>
 
 <p align="center">
-  <img alt="macOS" src="https://img.shields.io/badge/runs%20on-macOS-35E0D0?style=flat-square&labelColor=0D1417&logo=apple&logoColor=EAF4F4">
-  <img alt="Python 3.11" src="https://img.shields.io/badge/python-3.11-35E0D0?style=flat-square&labelColor=0D1417&logo=python&logoColor=EAF4F4">
-  <img alt="Local model" src="https://img.shields.io/badge/model-qwen3--vl%3A4b%20via%20Ollama-35E0D0?style=flat-square&labelColor=0D1417">
-  <img alt="Cloud off" src="https://img.shields.io/badge/cloud-off-4CC38A?style=flat-square&labelColor=0D1417">
-  <img alt="607 tests passing" src="https://img.shields.io/badge/tests-607%20passing-4CC38A?style=flat-square&labelColor=0D1417">
-  <img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-F2B544?style=flat-square&labelColor=0D1417">
+  <a href="https://www.apple.com/macos/"><img alt="macOS" src="https://img.shields.io/badge/runs%20on-macOS-35E0D0?style=flat-square&labelColor=0D1417&logo=apple&logoColor=EAF4F4"></a>
+  <a href="https://www.python.org/downloads/release/python-3110/"><img alt="Python 3.11" src="https://img.shields.io/badge/python-3.11-35E0D0?style=flat-square&labelColor=0D1417&logo=python&logoColor=EAF4F4"></a>
+  <a href="https://ollama.com/library/qwen3-vl"><img alt="Local model" src="https://img.shields.io/badge/model-qwen3--vl%3A4b%20via%20Ollama-35E0D0?style=flat-square&labelColor=0D1417"></a>
+  <a href="agents"><img alt="Cloud off" src="https://img.shields.io/badge/cloud-off-4CC38A?style=flat-square&labelColor=0D1417"></a>
+  <a href="tests"><img alt="607 tests passing" src="https://img.shields.io/badge/tests-607%20passing-4CC38A?style=flat-square&labelColor=0D1417"></a>
+  <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-F2B544?style=flat-square&labelColor=0D1417"></a>
   <a href="https://jamesagent.vercel.app/"><img alt="Website" src="https://img.shields.io/badge/website-jamesagent.vercel.app-35E0D0?style=flat-square&labelColor=0D1417"></a>
 </p>
 
